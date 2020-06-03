@@ -8,7 +8,6 @@ from timeit import default_timer as timer
 import json
 from datetime import datetime
 import csv
-import sys
 
 # metadata
 metadata = {
@@ -27,9 +26,9 @@ metadata = {
 
 # Defined variables
 ##################
+run_id = 'test'
 NUM_SAMPLES = 96
 air_gap_vol = 15
-run_id = $run_id
 
 MS_vol = 5
 air_gap_vol_MS = 2
@@ -60,7 +59,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Mix beads'},
+        1: {'Execute': False, 'description': 'Mix beads'},
         2: {'Execute': True, 'description': 'Transfer beads'},
     }
     for s in STEPS:  # Create an empty wait_time
@@ -102,7 +101,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse=True,
                     num_wells=1,
                     delay=0,
-                    reagent_reservoir_volume=20 * 8 * num_cols * 1.1,
+                    reagent_reservoir_volume=20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
@@ -266,11 +265,9 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # Divide destination wells in small groups for P300 pipette
     #destinations = list(divide_destinations(sample_plate.wells()[:NUM_SAMPLES], size_transfer))
-    Beads.reagent_reservoir = reagent_res.rows(
-    )[0][:Beads.num_wells]  # 1 row, 4 columns (first ones)
+    Beads.reagent_reservoir = reagent_res.rows()[0][:Beads.num_wells]  # 1 row, 4 columns (first ones)
     #pipette multiple  definition jump example play
     work_destinations_cols = sample_plate.rows()[0][:num_cols]
-    ms_origins = ms_plate.rows()[0][0]  # 1 row, 1 columns
 
     ############################################################################
     # STEP 1: PREMIX BEADS
@@ -307,7 +304,7 @@ def run(ctx: protocol_api.ProtocolContext):
         start = datetime.now()
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
-        beads_transfer_vol = [130, 130]  # Two rounds of 130
+        beads_transfer_vol = [20]  # Two rounds of 130
         rinse = True
         for i in range(num_cols):
             if not m300.hw_pipette['has_tip']:
@@ -316,7 +313,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 # Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(
                     reagent = Beads, cross_section_area = multi_well_rack_area,
-                    aspirate_volume = transfer_vol * 8, min_height=1)
+                    aspirate_volume = transfer_vol * 8, min_height=0.5, extra_volume=10)
 
                 if change_col == True:  # If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment(
@@ -328,20 +325,24 @@ def run(ctx: protocol_api.ProtocolContext):
                     'Aspirate from reservoir column: ' + str(Beads.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
 
+
                 if j != 0:
                     rinse = False
+
                 move_vol_multichannel(m300, reagent=Beads, source=Beads.reagent_reservoir[Beads.col],
                                       dest=work_destinations_cols[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
                                       pickup_height=pickup_height, disp_height = -2,
                                       rinse=rinse, blow_out = True, touch_tip=False)
-                m300.aspirate(air_gap_vol, work_destinations_cols[i].top(z = -2),
-                               rate = Beads.flow_rate_aspirate)
-                m300.dispense(air_gap_vol, Beads.reagent_reservoir[Beads.col].top())
-            ctx.comment('Mixing MS with beads ')
 
-        m300.drop_tip(home_after=False)
-        tip_track['counts'][m300] += 8
+                custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
+                                   vol=180, rounds=10, blow_out=True, mix_height=0,
+                                   x_offset = x_offset)
+
+
+            m300.drop_tip(home_after=False)
+            tip_track['counts'][m300] += 8
+
         end = datetime.now()
         time_taken = (end - start)
         ctx.comment('Step ' + str(STEP) + ': ' +
