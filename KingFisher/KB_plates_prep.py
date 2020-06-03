@@ -30,7 +30,7 @@ metadata = {
 NUM_SAMPLES = 96
 air_gap_vol = 0
 air_gap_vol_elutionbuffer = 0
-run_id = $run_id
+run_id =  '$run_id'
 
 x_offset = [0,0]
 multi_well_rack_area = 8.2 * 71.2  # Cross section of the 12 well reservoir
@@ -45,8 +45,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         1: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
         2: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1'},
-        3: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'}
-    }
+        3: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'},}
 
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -62,6 +61,7 @@ def run(ctx: protocol_api.ProtocolContext):
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse,
                      reagent_reservoir_volume, delay, num_wells, h_cono, v_fondo,
                       tip_recycling = 'none'):
+
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -104,7 +104,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             flow_rate_dispense=1,
                             rinse=False,
                             delay=0,
-                            reagent_reservoir_volume=50*NUM_SAMPLES,
+                            reagent_reservoir_volume=50*NUM_SAMPLES*1.1,
                             num_wells=1,
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
@@ -231,20 +231,30 @@ def run(ctx: protocol_api.ProtocolContext):
     reagent_res = ctx.load_labware(
         'nest_12_reservoir_15ml', '3', 'Reservoir 12 channel, column 1')
 
+
+
+
+
+
     # Wash Buffer 1 100ul Deepwell plate
     ############################################
     WashBuffer1_100ul_plate1 = ctx.load_labware(
         'kf_96_wellplate_2400ul', '1', 'Wash Buffer 1 Deepwell plate 1')
+
+
 
     # Wash Buffer 2 100ul Deepwell plate
     ############################################
     WashBuffer2_100ul_plate1 = ctx.load_labware(
         'kf_96_wellplate_2400ul', '7', 'Wash Buffer 2 Deepwell plate 1')
 
+
+
     # Elution Deepwell plate
     ############################################
     ElutionBuffer_50ul_plate = ctx.load_labware(
         'kingfisher_std_96_wellplate_550ul', '6', 'Elution Buffer 50 ul STD plate')
+
 
 ####################################
     # Load tip_racks
@@ -254,12 +264,15 @@ def run(ctx: protocol_api.ProtocolContext):
 ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
     WashBuffer1.reagent_reservoir = reagent_res.rows(
-    )[0][:WashBuffer1.num_well]
+    )[0][:WashBuffer1.num_wells]
+
     WashBuffer2.reagent_reservoir = reagent_res.rows(
-    )[0][WashBuffer1.num_well:(WashBuffer1.num_well+WashBuffer2.num_wells)]
+    )[0][WashBuffer1.num_wells:(WashBuffer1.num_wells+WashBuffer2.num_wells)]
+
     ElutionBuffer.reagent_reservoir = reagent_res.rows(
-    )[0][(WashBuffer1.num_well+WashBuffer2.num_wells):(WashBuffer1.num_well
-    +WashBuffer2.num_wells+ElutionBuffer.num_well)]
+    )[0][(WashBuffer1.num_wells+WashBuffer2.num_wells):(WashBuffer1.num_wells
+    +WashBuffer2.num_wells+ElutionBuffer.num_wells)]
+
     # columns in destination plates to be filled depending the number of samples
     wb1plate1_destination = WashBuffer1_100ul_plate1.rows()[0][:num_cols]
     wb2plate1_destination = WashBuffer2_100ul_plate1.rows()[0][:num_cols]
@@ -278,6 +291,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # STEP 1 Filling with WashBuffer1 plate 1
     ############################################################################
+
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
@@ -287,6 +301,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         WB1 = [100]
         rinse = False  # Only first time
+
         ########
         # Wash buffer dispense
         for i in range(num_cols):
@@ -297,7 +312,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = True #Rinse only first transfer
                 else:
                     rinse = False
-                move_vol_multichannel(m300, reagent = WashBuffer1, source = WashBuffer1.reagent_reservoir,
+                move_vol_multichannel(m300, reagent = WashBuffer1, source = WashBuffer1.reagent_reservoir[WashBuffer1.col],
                                dest = wb1plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = rinse, disp_height = -2,
@@ -336,11 +351,11 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = True
                 else:
                     rinse = False
-                move_vol_multichannel(m300, reagent = WashBuffer2, source = WashBuffer2.reagent_reservoir,
+                move_vol_multichannel(m300, reagent = WashBuffer2, source = WashBuffer2.reagent_reservoir[WashBuffer2.col],
                                dest = wb2plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = rinse, disp_height = -2,
-                               blow_out = True, touch_tip = True)
+                               blow_out = True, touch_tip = False)
         m300.drop_tip(home_after=True)
         tip_track['counts'][m300] += 8
         end = datetime.now()
@@ -348,6 +363,11 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' +
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         STEPS[STEP]['Time:'] = str(time_taken)
+
+
+
+
+
 
     ############################################################################
     # STEP 3 Transfer Elution buffer
@@ -373,12 +393,11 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment(
                     'Aspirate from Reservoir column: ' + str(ElutionBuffer.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
-                move_vol_multichannel(m300, reagent = ElutionBuffer, source = ElutionBuffer.reagent_reservoir,
+                move_vol_multichannel(m300, reagent = ElutionBuffer, source = ElutionBuffer.reagent_reservoir[ElutionBuffer.col],
                               dest = elutionbuffer_destination[i], vol = transfer_vol,
                               air_gap_vol = air_gap_vol_elutionbuffer, x_offset = x_offset,
                               pickup_height = pickup_height, rinse = False, disp_height = -2,
                               blow_out = True, touch_tip = False)
-
         m300.drop_tip(home_after=True)
         tip_track['counts'][m300] += 8
         end = datetime.now()
@@ -400,16 +419,18 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
-    from opentrons.drivers.rpi_drivers import gpio
-    for i in range(3):
-        gpio.set_rail_lights(False)
-        gpio.set_button_light(1, 0, 0)
-        time.sleep(0.3)
-        gpio.set_rail_lights(True)
-        gpio.set_button_light(0, 0, 1)
-        time.sleep(0.3)
-    gpio.set_button_light(0, 1, 0)
-    ctx.comment(
-        'Finished! \nMove deepwell plates to KingFisher extractor.')
-    ctx.comment('Used tips in total: ' + str(tip_track['counts'][m300]))
-    ctx.comment('Used racks in total: ' + str(tip_track['counts'][m300] / 96))
+    if not ctx.is_simulating():
+        from opentrons.drivers.rpi_drivers import gpio
+
+        for i in range(3):
+            gpio.set_rail_lights(False)
+            gpio.set_button_light(1, 0, 0)
+            time.sleep(0.3)
+            gpio.set_rail_lights(True)
+            gpio.set_button_light(0, 0, 1)
+            time.sleep(0.3)
+        gpio.set_button_light(0, 1, 0)
+        ctx.comment(
+            'Finished! \nMove deepwell plates to KingFisher extractor.')
+        ctx.comment('Used tips in total: ' + str(tip_track['counts'][m300]))
+        ctx.comment('Used racks in total: ' + str(tip_track['counts'][m300] / 96))

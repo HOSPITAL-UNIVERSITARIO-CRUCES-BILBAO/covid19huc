@@ -2,7 +2,7 @@ import math
 from opentrons.types import Point
 from opentrons import protocol_api
 import time
-import os
+
 import numpy as np
 from timeit import default_timer as timer
 import json
@@ -48,6 +48,7 @@ num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 
 # 'kf_96_wellplate_2400ul'
 def run(ctx: protocol_api.ProtocolContext):
+    import os
     from opentrons.drivers.rpi_drivers import gpio
     ctx.comment('Actual used columns: ' + str(num_cols))
 
@@ -358,15 +359,17 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
-    gpio.set_rail_lights(False)
+    ctx._hw_manager.hardware.set_lights(rails=False)
     time.sleep(2)
-    #os.system('mpg123 -f -8000 /var/lib/jupyter/notebooks/toreador.mp3 &')
+    import os
+    if not ctx.is_simulating():
+        os.system('mpg123 -f -14000 /etc/audio/speaker-test.mp3 &')
     for i in range(3):
-        gpio.set_rail_lights(False)
-        gpio.set_button_light(1, 0, 0)
+        ctx._hw_manager.hardware.set_lights(rails=False)
+        #gpio.set_button_light(1, 0, 0)
         time.sleep(0.3)
-        gpio.set_rail_lights(True)
-        gpio.set_button_light(0, 0, 1)
+        ctx._hw_manager.hardware.set_lights(rails=True)
+        #gpio.set_button_light(0, 0, 1)
         time.sleep(0.3)
-    gpio.set_button_light(0, 1, 0)
+    #gpio.set_button_light(0, 1, 0)
     ctx.comment('Finished! \nMove plate to KingFisher')
