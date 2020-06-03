@@ -26,17 +26,12 @@ metadata = {
 
 # Defined variables
 ##################
-run_id = 'test'
+run_id = 'beads'
 NUM_SAMPLES = 96
 air_gap_vol = 15
 
-MS_vol = 5
-air_gap_vol_MS = 2
-height_MS = -35
-temperature = 10
 x_offset = [0,0]
 L_deepwell = 8  # Deepwell side length (KingFisher deepwell)
-total_MS_volume = NUM_SAMPLES * MS_vol * 1.1  # Total volume of MS
 # Screwcap variables
 diameter_screwcap = 8.25  # Diameter of the screwcap
 volume_cone = 50  # Volume in ul that fit in the screwcap cone
@@ -45,7 +40,7 @@ volume_cone = 50  # Volume in ul that fit in the screwcap cone
 area_section_screwcap = (np.pi * diameter_screwcap**2) / 4
 h_cone = (volume_cone * 3 / area_section_screwcap)
 screwcap_cross_section_area = math.pi * \
-    diameter_screwcap**2 / 4  # screwcap cross secion area
+diameter_screwcap**2 / 4  # screwcap cross secion area
 multi_well_rack_area = 8.2 * 71.2  # Cross section of the 12 well reservoir
 deepwell_cross_section_area = L_deepwell**2  # deepwell cross secion area
 num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
@@ -205,9 +200,9 @@ def run(ctx: protocol_api.ProtocolContext):
             pipette.dispense(volume, drop)
             pipette.move_to(d.top(z=5))
             pipette.aspirate(20)  # air gap
-        try:
+
             pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
-        except:
+
             pipette.blow_out(waste_pool.bottom(pickup_height + 3))
         return (len(dest) * volume)
 
