@@ -13,7 +13,7 @@ import csv
 metadata = {
     'protocolName': 'Kingfisher Pathogen Station B2 v2',
     'author': 'Aitor Gastaminza, Eva Gonzalez, José Luis Villanueva (jlvillanueva@clinic.cat)',
-    'source': 'Hospital Clínic Barcelona',
+    'source': 'Hospital Clínic Barcelona, Hospital Cruces Barakaldo',
     'apiLevel': '2.0',
     'description': 'Protocol for RNA extraction preparation for ThermoFisher Pathogen kit (ref 4462359) \
     setup - sample + beads + buffer preparation'
