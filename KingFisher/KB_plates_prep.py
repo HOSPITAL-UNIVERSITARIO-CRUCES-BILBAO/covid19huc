@@ -44,10 +44,8 @@ def run(ctx: protocol_api.ProtocolContext):
     STEPS = {  # Dictionary with STEP activation, description, and times
 
         1: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
-        2: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 2'},
-        3: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1'},
-        4: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 2'},
-        5: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'},
+        2: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1'},
+        3: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'}
     }
 
     for s in STEPS:  # Create an empty wait_time
@@ -233,30 +231,20 @@ def run(ctx: protocol_api.ProtocolContext):
     reagent_res = ctx.load_labware(
         'nest_12_reservoir_15ml', '3', 'Reservoir 12 channel, column 1')
 
-
-
-
-
-
     # Wash Buffer 1 100ul Deepwell plate
     ############################################
     WashBuffer1_100ul_plate1 = ctx.load_labware(
         'kf_96_wellplate_2400ul', '1', 'Wash Buffer 1 Deepwell plate 1')
-
-
 
     # Wash Buffer 2 100ul Deepwell plate
     ############################################
     WashBuffer2_100ul_plate1 = ctx.load_labware(
         'kf_96_wellplate_2400ul', '7', 'Wash Buffer 2 Deepwell plate 1')
 
-
-
     # Elution Deepwell plate
     ############################################
     ElutionBuffer_50ul_plate = ctx.load_labware(
         'kingfisher_std_96_wellplate_550ul', '6', 'Elution Buffer 50 ul STD plate')
-
 
 ####################################
     # Load tip_racks
@@ -271,7 +259,7 @@ def run(ctx: protocol_api.ProtocolContext):
     )[0][WashBuffer1.num_well:(WashBuffer1.num_well+WashBuffer2.num_wells)]
     ElutionBuffer.reagent_reservoir = reagent_res.rows(
     )[0][(WashBuffer1.num_well+WashBuffer2.num_wells):(WashBuffer1.num_well
-    +WashBuffer2.num_wells+ElutionBuffer.num_well)
+    +WashBuffer2.num_wells+ElutionBuffer.num_well)]
     # columns in destination plates to be filled depending the number of samples
     wb1plate1_destination = WashBuffer1_100ul_plate1.rows()[0][:num_cols]
     wb2plate1_destination = WashBuffer2_100ul_plate1.rows()[0][:num_cols]
@@ -299,7 +287,6 @@ def run(ctx: protocol_api.ProtocolContext):
 
         WB1 = [100]
         rinse = False  # Only first time
-
         ########
         # Wash buffer dispense
         for i in range(num_cols):
@@ -315,6 +302,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = rinse, disp_height = -2,
                                blow_out = True, touch_tip = True)
+
         m300.drop_tip(home_after=True)
         tip_track['counts'][m300] += 8
         end = datetime.now()
@@ -361,11 +349,6 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         STEPS[STEP]['Time:'] = str(time_taken)
 
-
-
-
-
-
     ############################################################################
     # STEP 3 Transfer Elution buffer
     ############################################################################
@@ -395,6 +378,7 @@ def run(ctx: protocol_api.ProtocolContext):
                               air_gap_vol = air_gap_vol_elutionbuffer, x_offset = x_offset,
                               pickup_height = pickup_height, rinse = False, disp_height = -2,
                               blow_out = True, touch_tip = False)
+
         m300.drop_tip(home_after=True)
         tip_track['counts'][m300] += 8
         end = datetime.now()
