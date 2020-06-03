@@ -25,7 +25,7 @@ metadata = {
 #Defined variables
 ##################
 NUM_SAMPLES = 94
-air_gap_vol = 15
+air_gap_vol = 0
 run_id = 'test'
 volume_sample = 50
 lysis_volume = 100
@@ -264,7 +264,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # tips20 = [ctx.load_labware('opentrons_96_filtertiprack_20ul', slot, '20µl filter tiprack')
     # for slot in ['2', '8']]
     tips300 = [ctx.load_labware('opentrons_96_filtertiprack_200ul', slot, '200µl filter tiprack')
-                for slot in ['7', '10']]
+                for slot in ['10', '11']]
     tips20 = [ctx.load_labware('opentrons_96_filtertiprack_20ul', slot, '20µl filter tiprack')
                 for slot in ['8']]
 
@@ -276,15 +276,15 @@ def run(ctx: protocol_api.ProtocolContext):
     sample_sources = sample_sources_full[:NUM_SAMPLES]
     destinations = dest_plate.wells()[:NUM_SAMPLES]
 
-    # p20 = ctx.load_instrument(
-    # 'p20_single_gen2', mount='right', tip_racks=tips20)
+    p20 = ctx.load_instrument(
+        'p20_single_gen2', mount='left', tip_racks=tips20)
     p300 = ctx.load_instrument(
-        'p200_single_gen2', 'right', tip_racks=tips1000)  # load P1000 pipette
+        'p300_single_gen2', mount='right', tip_racks=tips300)  # load P1000 pipette
 
     # used tip counter and set maximum tips available
     tip_track = {
         'counts': {p300: 0, p20: 0},  # p1000: 0},
-        'maxes': {p300: len(tips200) * 96, p20: len(tips20)*96}  # ,p20: len(tips20)*96,
+        'maxes': {p300: len(tips300) * 96, p20: len(tips20)*96}  # ,p20: len(tips20)*96,
     }
 
     ############################################################################
@@ -305,7 +305,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(p300, reagent = LBuffer, source = lysis_source, dest = d,
             vol = lysis_volume, air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = LBuffer.rinse, disp_height = -10,
-                               blow_out = True, touch_tip = True)
+                               blow_out = False, touch_tip = False)
             # Mix the sample AFTER dispensing
             #custom_mix(p1000, reagent = Samples, location = d, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
             # Drop tip and update counter
@@ -341,7 +341,7 @@ def run(ctx: protocol_api.ProtocolContext):
             # Mix the sample AFTER dispensing
             #custom_mix(p300, reagent = Samples, location = d, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
             # Drop tip and update counter
-            p1000.drop_tip()
+            p300.drop_tip()
             tip_track['counts'][p300] += 1
 
         # Time statistics
@@ -367,15 +367,15 @@ def run(ctx: protocol_api.ProtocolContext):
             # Mix the sample BEFORE dispensing
             #custom_mix(p1000, reagent = Samples, location = s, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
             move_vol_multichannel(p20, reagent = IC, source = ic_source, dest = d,
-            vol = lysis_volume, air_gap_vol = air_gap_vol, x_offset = x_offset,
+            vol = ic_volume, air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = LBuffer.rinse, disp_height = -10,
-                               blow_out = True, touch_tip = True)
+                               blow_out = False, touch_tip = False)
             # Mix the sample AFTER dispensing
-            custom_mix(p30, reagent = Samples, location = d, vol = 10, rounds = 2,
-            blow_out = True, mix_height = 15)
+            custom_mix(p20, reagent = Samples, location = d, vol = 10, rounds = 2,
+            blow_out = True, mix_height = 15, x_offset = x_offset)
             # Drop tip and update counter
-            p300.drop_tip()
-            tip_track['counts'][p300] += 1
+            p20.drop_tip()
+            tip_track['counts'][p20] += 1
 
         # Time statistics
         end = datetime.now()
@@ -400,6 +400,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # Light flash end of program
     from opentrons.drivers.rpi_drivers import gpio
+
     for i in range(3):
         gpio.set_rail_lights(False)
         gpio.set_button_light(1, 0, 0)
@@ -408,10 +409,12 @@ def run(ctx: protocol_api.ProtocolContext):
         gpio.set_button_light(0, 0, 1)
         time.sleep(0.3)
     gpio.set_button_light(0, 1, 0)
+
     ctx.comment(
         'Finished! \nMove deepwell plate (slot 5) to Station C for MMIX addition and qPCR preparation.')
-    ctx.comment('Used p200 tips in total: ' + str(tip_track['counts'][p200]))
-    ctx.comment('Used p20 racks in total: ' +
-                str(tip_track['counts'][p20] / 96))
-    #ctx.comment('Used p20 tips in total: ' + str(tip_track['counts'][p20]))
-    #ctx.comment('Used p20 racks in total: ' + str(tip_track['counts'][p20] / 96))
+
+    ctx.comment('Used 200µl tips in total: ' + str(tip_track['counts'][p300]))
+    ctx.comment('Used 200ul racks in total: '+str(tip_track['counts'][p300] / 96))
+
+    ctx.comment('Used p20 tips in total: ' + str(tip_track['counts'][p20]))
+    ctx.comment('Used p20 racks in total: ' + str(tip_track['counts'][p20] / 96))
