@@ -106,7 +106,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       v_fondo = volume_cone  # V cono
                       )
 
-    Samples = Reagent(name='Samples',
+    Elution = Reagent(name='Elution',
                       rinse=False,
                       flow_rate_aspirate = 1,
                       flow_rate_dispense = 1,
@@ -186,7 +186,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, dest.top(z = 5))
+            pipet.dispense(post_airgap_vol, dest.top(z = 5), rate = 2)
 
 
 
@@ -353,7 +353,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(m20, reagent = Samples, source = s, dest = d,
             vol = volume_sample, air_gap_vol = air_gap_sample, x_offset = x_offset,
                    pickup_height = 0.2, disp_height = -10, rinse = False,
-                   blow_out=True, touch_tip=False, post_dispense=True,post_airgap=True)
+                   blow_out=True, touch_tip=True, post_airgap=True)
             m20.drop_tip()
             tip_track['counts'][m20]+=8
 
