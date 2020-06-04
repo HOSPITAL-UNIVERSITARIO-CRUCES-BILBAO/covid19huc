@@ -214,9 +214,9 @@ def run(ctx: protocol_api.ProtocolContext):
         if blow_out == True:
             pipet.blow_out(location.top(z=-2))  # Blow out
         if post_dispense == True:
-            pipet.dispense(post_dispense_vol, dest.top(z = -2))
+            pipet.dispense(post_dispense_vol, location.top(z = -2))
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, dest.top(z = 5))
+            pipet.dispense(post_airgap_vol, location.top(z = 5))
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 50):
         nonlocal ctx
@@ -353,7 +353,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(m20, reagent = Samples, source = s, dest = d,
             vol = volume_sample, air_gap_vol = air_gap_sample, x_offset = x_offset,
                    pickup_height = 0.2, disp_height = -10, rinse = False,
-                   blow_out=True, touch_tip=False,post_airgap=True)
+                   blow_out=True, touch_tip=False, post_dispense=True,post_airgap=True)
             m20.drop_tip()
             tip_track['counts'][m20]+=8
 

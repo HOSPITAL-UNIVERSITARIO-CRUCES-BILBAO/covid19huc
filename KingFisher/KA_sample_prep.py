@@ -196,9 +196,9 @@ def run(ctx: protocol_api.ProtocolContext):
         if blow_out == True:
             pipet.blow_out(location.top(z=-2))  # Blow out
         if post_dispense == True:
-            pipet.dispense(post_dispense_vol, dest.top(z = -2))
+            pipet.dispense(post_dispense_vol, location.top(z = -2))
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, dest.top(z = 5))
+            pipet.dispense(post_airgap_vol, location.top(z = 5))
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 50):
         nonlocal ctx
