@@ -27,7 +27,7 @@ metadata = {
 # Defined variables
 ##################
 run_id = 'beads'
-NUM_SAMPLES = 96
+NUM_SAMPLES = 16
 air_gap_vol = 15
 
 x_offset = [0,0]
@@ -334,9 +334,9 @@ def run(ctx: protocol_api.ProtocolContext):
                                       pickup_height=pickup_height, disp_height = -2,
                                       rinse=rinse, blow_out = True, touch_tip=False)
 
-                custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                                   vol=180, rounds=10, blow_out=True, mix_height=0,
-                                   x_offset = x_offset)
+                custom_mix(m300, Beads, work_destinations_cols[i] ,
+                                   vol=180, rounds=10, blow_out=True, mix_height=8,
+                                   x_offset = x_offset, source_height=0.5)
 
 
             m300.drop_tip(home_after=False)
@@ -368,12 +368,12 @@ def run(ctx: protocol_api.ProtocolContext):
         os.system('mpg123 -f -14000 /etc/audio/speaker-test.mp3 &')
     for i in range(3):
         ctx._hw_manager.hardware.set_lights(rails=False)
-        ctx._hw_manager.hardware.set_button_light(1,0,0)
+        #ctx._hw_manager.hardware.set_button_light(1,0,0)
         time.sleep(0.3)
         ctx._hw_manager.hardware.set_lights(rails=True)
-        ctx._hw_manager.hardware.set_button_light(0,0,1)
+        #ctx._hw_manager.hardware.set_button_light(0,0,1)
         time.sleep(0.3)
         ctx._hw_manager.hardware.set_lights(rails=False)
-    ctx._hw_manager.hardware.set_button_light(0,1,0)
+    #ctx._hw_manager.hardware.set_button_light(0,1,0)
 
     ctx.comment('Finished! \nMove plate to KingFisher')
