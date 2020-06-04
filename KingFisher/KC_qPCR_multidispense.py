@@ -59,7 +59,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Transfer MMIX'},
+        1: {'Execute': False, 'description': 'Transfer MMIX'},
         2: {'Execute': True, 'description': 'Transfer elution'}
     }
 
@@ -353,7 +353,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(m20, reagent = Samples, source = s, dest = d,
             vol = volume_sample, air_gap_vol = air_gap_sample, x_offset = x_offset,
                    pickup_height = 0.2, disp_height = -10, rinse = False,
-                   blow_out=True, touch_tip=False)
+                   blow_out=True, touch_tip=False,post_airgap=True)
             m20.drop_tip()
             tip_track['counts'][m20]+=8
 
