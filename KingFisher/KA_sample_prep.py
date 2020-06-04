@@ -136,7 +136,7 @@ def run(ctx: protocol_api.ProtocolContext):
         return s
 
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
-                       pickup_height, rinse, disp_height, blow_out, touch_tip):
+                       pickup_height, rinse, disp_height, blow_out, touch_tip, post_airgap=False, post_airgap_vol=10):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -151,7 +151,7 @@ def run(ctx: protocol_api.ProtocolContext):
                        x_offset = x_offset)
         # SOURCE
         s = source.bottom(pickup_height).move(Point(x = x_offset[0]))
-        pipet.aspirate(vol, s)  # aspirate liquid
+        pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate)  # aspirate liquid
         if air_gap_vol != 0:  # If there is air_gap_vol, switch pipette to slow speed
             pipet.aspirate(air_gap_vol, source.top(z = -2),
                            rate = reagent.flow_rate_aspirate)  # air gap
@@ -161,13 +161,15 @@ def run(ctx: protocol_api.ProtocolContext):
                        rate = reagent.flow_rate_dispense)  # dispense all
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
         if blow_out == True:
-            pipet.blow_out(dest.top(z = -5))
+            pipet.blow_out(dest.top(z = -2))
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
+        if post_airgap == True:
+            pipet.dispense(post_airgap_vol, dest.top(z = 5))
 
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
-    x_offset, source_height = 3):
+    x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
         blow_out: Blow out optional [True,False]
@@ -188,6 +190,8 @@ def run(ctx: protocol_api.ProtocolContext):
             z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
         if blow_out == True:
             pipet.blow_out(location.top(z=-2))  # Blow out
+        if post_airgap == True:
+            pipet.dispense(post_airgap_vol, dest.top(z = 5))
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 50):
         nonlocal ctx

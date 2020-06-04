@@ -116,7 +116,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ##################
     # Custom functions
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
-                       pickup_height, rinse, disp_height, blow_out, touch_tip):
+                       pickup_height, rinse, disp_height, blow_out, touch_tip, post_airgap=False, post_airgap_vol=10):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -143,11 +143,12 @@ def run(ctx: protocol_api.ProtocolContext):
         if blow_out == True:
             pipet.blow_out(dest.top(z = -2))
         if touch_tip == True:
-            pipet.touch_tip(radius=0.9, speed = 20, v_offset = -5) #radius here is 0.9
-
+            pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
+        if post_airgap == True:
+            pipet.dispense(post_airgap_vol, dest.top(z = 5))
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
-    x_offset, source_height = 3):
+    x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
         blow_out: Blow out optional [True,False]
@@ -168,6 +169,8 @@ def run(ctx: protocol_api.ProtocolContext):
             z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
         if blow_out == True:
             pipet.blow_out(location.top(z=-2))  # Blow out
+        if post_airgap == True:
+            pipet.dispense(post_airgap_vol, dest.top(z = 5))
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 50):
         nonlocal ctx
@@ -431,7 +434,7 @@ def run(ctx: protocol_api.ProtocolContext):
             time.sleep(0.3)
             ctx._hw_manager.hardware.set_lights(rails=False)
         ctx._hw_manager.hardware.set_button_light(0,1,0)
-        
+
         ctx.comment(
             'Finished! \nMove deepwell plates to KingFisher extractor.')
         ctx.comment('Used tips in total: ' + str(tip_track['counts'][m300]))
