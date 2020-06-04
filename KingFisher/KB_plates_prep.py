@@ -316,7 +316,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                dest = wb1plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = rinse, disp_height = -2,
-                               blow_out = True, touch_tip = True)
+                               blow_out = True, touch_tip = False)
 
         m300.drop_tip(home_after=True)
         tip_track['counts'][m300] += 8
@@ -423,13 +423,15 @@ def run(ctx: protocol_api.ProtocolContext):
         from opentrons.drivers.rpi_drivers import gpio
 
         for i in range(3):
-            gpio.set_rail_lights(False)
-            gpio.set_button_light(1, 0, 0)
+            ctx._hw_manager.hardware.set_lights(rails=False)
+            ctx._hw_manager.hardware.set_button_light(1,0,0)
             time.sleep(0.3)
-            gpio.set_rail_lights(True)
-            gpio.set_button_light(0, 0, 1)
+            ctx._hw_manager.hardware.set_lights(rails=True)
+            ctx._hw_manager.hardware.set_button_light(0,0,1)
             time.sleep(0.3)
-        gpio.set_button_light(0, 1, 0)
+            ctx._hw_manager.hardware.set_lights(rails=False)
+        ctx._hw_manager.hardware.set_button_light(0,1,0)
+        
         ctx.comment(
             'Finished! \nMove deepwell plates to KingFisher extractor.')
         ctx.comment('Used tips in total: ' + str(tip_track['counts'][m300]))
