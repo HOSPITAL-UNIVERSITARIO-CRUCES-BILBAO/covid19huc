@@ -42,6 +42,8 @@ diameter_screwcap = 8.25  # Diameter of the screwcap
 temperature = 25  # Temperature of temp module
 volume_cone = 50  # Volume in ul that fit in the screwcap cone
 x_offset = [0,0]
+pipette_allowed_capacity=170
+size_transfer = math.floor(pipette_allowed_capacity / volume_mmix)
 
 # Calculated variables
 area_section_screwcap = (np.pi * diameter_screwcap**2) / 4
@@ -123,23 +125,27 @@ def run(ctx: protocol_api.ProtocolContext):
 
 
     def divide_destinations(l, n):
+        a=[]
         # Divide the list of destinations in size n lists.
         for i in range(0, len(l), n):
-            yield l[i:i + n]
+            a.append( l[i:i + n])
+
+        return a
 
     def distribute_custom(pipette, volume, src, dest, waste_pool, pickup_height, extra_dispensal, disp_height=0):
         # Custom distribute function that allows for blow_out in different location and adjustement of touch_tip
+        air_gap=10
         pipette.aspirate((len(dest) * volume) +
                          extra_dispensal, src.bottom(pickup_height))
         pipette.touch_tip(speed=20, v_offset=-5)
         pipette.move_to(src.top(z=5))
-        pipette.aspirate(20)  # air gap
+        pipette.aspirate(air_gap)  # air gap
         for d in dest:
-            pipette.dispense(20, d.top())
+            pipette.dispense(air_gap, d.top())
             drop = d.top(z = disp_height)
             pipette.dispense(volume, drop)
             pipette.move_to(d.top(z=5))
-            pipette.aspirate(20)  # air gap
+            pipette.aspirate(air_gap)  # air gap
         try:
             pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
         except:
