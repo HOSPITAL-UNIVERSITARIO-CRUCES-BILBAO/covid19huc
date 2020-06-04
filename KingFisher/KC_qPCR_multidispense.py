@@ -153,7 +153,9 @@ def run(ctx: protocol_api.ProtocolContext):
         return (len(dest) * volume)
 
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
-                       pickup_height, rinse, disp_height, blow_out, touch_tip, post_airgap=False, post_airgap_vol=10):
+                       pickup_height, rinse, disp_height, blow_out, touch_tip,
+                       post_dispense=False, post_dispense_vol=20,
+                       post_airgap=False, post_airgap_vol=10):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -179,6 +181,8 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
         if blow_out == True:
             pipet.blow_out(dest.top(z = -2))
+        if post_dispense == True:
+            pipet.dispense(post_dispense_vol, dest.top(z = -2))
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
         if post_airgap == True:
@@ -187,7 +191,8 @@ def run(ctx: protocol_api.ProtocolContext):
 
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
-    x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10):
+    x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10,
+    post_dispense=False, post_dispense_vol=20,):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
         blow_out: Blow out optional [True,False]
@@ -208,6 +213,8 @@ def run(ctx: protocol_api.ProtocolContext):
             z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
         if blow_out == True:
             pipet.blow_out(location.top(z=-2))  # Blow out
+        if post_dispense == True:
+            pipet.dispense(post_dispense_vol, dest.top(z = -2))
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, dest.top(z = 5))
 

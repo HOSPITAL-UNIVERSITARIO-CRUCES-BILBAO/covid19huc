@@ -116,7 +116,9 @@ def run(ctx: protocol_api.ProtocolContext):
     ##################
     # Custom functions
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
-                       pickup_height, rinse, disp_height, blow_out, touch_tip, post_airgap=False, post_airgap_vol=10):
+                       pickup_height, rinse, disp_height, blow_out, touch_tip,
+                       post_dispense=False, post_dispense_vol=20,
+                       post_airgap=False, post_airgap_vol=10):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -142,13 +144,18 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
         if blow_out == True:
             pipet.blow_out(dest.top(z = -2))
+        if post_dispense == True:
+            pipet.dispense(post_dispense_vol, dest.top(z = -2))
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, dest.top(z = 5))
 
+
+
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
-    x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10):
+    x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10,
+    post_dispense=False, post_dispense_vol=20,):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
         blow_out: Blow out optional [True,False]
@@ -169,6 +176,8 @@ def run(ctx: protocol_api.ProtocolContext):
             z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
         if blow_out == True:
             pipet.blow_out(location.top(z=-2))  # Blow out
+        if post_dispense == True:
+            pipet.dispense(post_dispense_vol, dest.top(z = -2))
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, dest.top(z = 5))
 
@@ -319,9 +328,9 @@ def run(ctx: protocol_api.ProtocolContext):
                                dest = wb1plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = rinse, disp_height = -2,
-                               blow_out = True, touch_tip = False)
+                               blow_out = True, touch_tip = False, post_dispense=True)
 
-        m300.drop_tip(home_after=True)
+        m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
         end = datetime.now()
         time_taken = (end - start)
@@ -358,8 +367,8 @@ def run(ctx: protocol_api.ProtocolContext):
                                dest = wb2plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = rinse, disp_height = -2,
-                               blow_out = True, touch_tip = False)
-        m300.drop_tip(home_after=True)
+                               blow_out = True, touch_tip = False, post_dispense=True)
+        m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
         end = datetime.now()
         time_taken = (end - start)
@@ -400,8 +409,8 @@ def run(ctx: protocol_api.ProtocolContext):
                               dest = elutionbuffer_destination[i], vol = transfer_vol,
                               air_gap_vol = air_gap_vol_elutionbuffer, x_offset = x_offset,
                               pickup_height = pickup_height, rinse = False, disp_height = -2,
-                              blow_out = True, touch_tip = False)
-        m300.drop_tip(home_after=True)
+                              blow_out = True, touch_tip = False, post_dispense=True)
+        m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
         end = datetime.now()
         time_taken = (end - start)
