@@ -28,7 +28,7 @@ metadata = {
 ##################
 
 NUM_SAMPLES = 96
-air_gap_vol = 0
+air_gap_vol = 15
 air_gap_vol_elutionbuffer = 0
 run_id =  '$run_id'
 
@@ -43,9 +43,9 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
 
-        1: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
+        1: {'Execute': False, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
         2: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1'},
-        3: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'},}
+        3: {'Execute': False, 'description': 'Add 50 ul Elution Buffer'},}
 
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -118,7 +118,7 @@ def run(ctx: protocol_api.ProtocolContext):
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
                        pickup_height, rinse, disp_height, blow_out, touch_tip,
                        post_dispense=False, post_dispense_vol=20,
-                       post_airgap=False, post_airgap_vol=10):
+                       post_airgap=True, post_airgap_vol=10):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -154,7 +154,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
-    x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10,
+    x_offset, source_height = 3, post_airgap=True, post_airgap_vol=10,
     post_dispense=False, post_dispense_vol=20,):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
@@ -328,7 +328,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                dest = wb1plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = rinse, disp_height = -2,
-                               blow_out = True, touch_tip = False, post_dispense=True)
+                               blow_out = True, touch_tip = False, post_airgap=True)
 
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
@@ -367,7 +367,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                dest = wb2plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = rinse, disp_height = -2,
-                               blow_out = True, touch_tip = False, post_dispense=True)
+                               blow_out = True, touch_tip = False, post_airgap=True)
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
         end = datetime.now()
@@ -409,7 +409,7 @@ def run(ctx: protocol_api.ProtocolContext):
                               dest = elutionbuffer_destination[i], vol = transfer_vol,
                               air_gap_vol = air_gap_vol_elutionbuffer, x_offset = x_offset,
                               pickup_height = pickup_height, rinse = False, disp_height = -2,
-                              blow_out = True, touch_tip = False, post_dispense=True)
+                              blow_out = True, touch_tip = False, post_airgap=True)
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
         end = datetime.now()

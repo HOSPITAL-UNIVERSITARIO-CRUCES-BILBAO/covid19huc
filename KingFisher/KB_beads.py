@@ -26,8 +26,8 @@ metadata = {
 
 # Defined variables
 ##################
-run_id = 'beads'
-NUM_SAMPLES = 16
+run_id = '$run_id'
+NUM_SAMPLES = 96
 air_gap_vol = 15
 
 x_offset = [0,0]
@@ -138,7 +138,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, dest.top(z = 5))
+            pipet.dispense(post_airgap_vol, dest.top(z = -2))
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
     x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10,
@@ -150,23 +150,24 @@ def run(ctx: protocol_api.ProtocolContext):
         source_height: height from bottom to aspirate
         mix_height: height from bottom to dispense
         '''
+        mix_trap_volumne=1
         if mix_height == 0:
             mix_height = 3
-        pipet.aspirate(1, location=location.bottom(
+        pipet.aspirate(mix_trap_volumne, location=location.bottom(
             z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate)
         for _ in range(rounds):
             pipet.aspirate(vol, location=location.bottom(
                 z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate)
             pipet.dispense(vol, location=location.bottom(
                 z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
-        pipet.dispense(1, location=location.bottom(
+        pipet.dispense(mix_trap_volumne, location=location.bottom(
             z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
         if blow_out == True:
-            pipet.blow_out(location.top(z=-2))  # Blow out
+            pipet.blow_out(location.top(z = -2))
         if post_dispense == True:
-            pipet.dispense(post_dispense_vol, dest.top(z = -2))
+            pipet.dispense(post_dispense_vol)
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, dest.top(z = 5))
+            pipet.dispense(post_airgap_vol)
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 50):
         nonlocal ctx
@@ -290,8 +291,8 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Mixing ' + Beads.name)
 
         # Mixing
-        custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col], vol=60,
-                   rounds=10, blow_out=True, mix_height=8, x_offset = x_offset, post_dispense=True)
+        custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col], vol=70,
+                   rounds=10, blow_out=True, mix_height=6, x_offset = x_offset, post_dispense=True)
         ctx.comment('Finished premixing!')
         ctx.comment('Now, reagents will be transferred to deepwell plate.')
 
@@ -325,7 +326,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     ctx.comment(
                         'Mixing new reservoir column: ' + str(Beads.col))
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                               vol=60, rounds=10, blow_out=True, mix_height=0,
+                               vol=70, rounds=10, blow_out=True, mix_height=0,
                                x_offset = x_offset, post_dispense=True)
                 ctx.comment(
                     'Aspirate from reservoir column: ' + str(Beads.col))
@@ -339,10 +340,10 @@ def run(ctx: protocol_api.ProtocolContext):
                                       dest=work_destinations_cols[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
                                       pickup_height=pickup_height, disp_height = -2,
-                                      rinse=rinse, blow_out = True, touch_tip=False)
+                                      rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 custom_mix(m300, Beads, work_destinations_cols[i] ,
-                                   vol=180, rounds=10, blow_out=True, mix_height=8,
+                                   vol=70, rounds=10, blow_out=True, mix_height=8,
                                    x_offset = x_offset, source_height=0.5, post_dispense=True)
 
 
