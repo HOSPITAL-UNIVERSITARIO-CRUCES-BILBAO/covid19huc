@@ -118,7 +118,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       )
 
     MMIX.vol_well = MMIX.vol_well_original
-    Samples.vol_well = Samples.vol_well_original
+    Elution.vol_well = Elution.vol_well_original
 
     ##################
     # Custom functions
@@ -350,7 +350,7 @@ def run(ctx: protocol_api.ProtocolContext):
         for s, d in zip(samples_multi, pcr_wells_multi):
             m20.pick_up_tip()
             #Source samples
-            move_vol_multichannel(m20, reagent = Samples, source = s, dest = d,
+            move_vol_multichannel(m20, reagent = Elution, source = s, dest = d,
             vol = volume_sample, air_gap_vol = air_gap_sample, x_offset = x_offset,
                    pickup_height = 0.2, disp_height = -10, rinse = False,
                    blow_out=True, touch_tip=True, post_airgap=True)
