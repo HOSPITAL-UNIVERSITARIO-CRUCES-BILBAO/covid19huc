@@ -24,7 +24,7 @@ metadata = {
 
 #Defined variables
 ##################
-NUM_SAMPLES = 94
+NUM_SAMPLES = 16
 air_gap_vol = 0
 run_id = 'test'
 volume_sample = 50
@@ -406,16 +406,18 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
-    from opentrons.drivers.rpi_drivers import gpio
-
+    import os
+    if not ctx.is_simulating():
+        os.system('mpg123 -f -14000 /etc/audio/speaker-test.mp3 &')
     for i in range(3):
-        gpio.set_rail_lights(False)
-        gpio.set_button_light(1, 0, 0)
+        ctx._hw_manager.hardware.set_lights(rails=False)
+        ctx._hw_manager.hardware.set_button_light(1,0,0)
         time.sleep(0.3)
-        gpio.set_rail_lights(True)
-        gpio.set_button_light(0, 0, 1)
+        ctx._hw_manager.hardware.set_lights(rails=True)
+        ctx._hw_manager.hardware.set_button_light(0,0,1)
         time.sleep(0.3)
-    gpio.set_button_light(0, 1, 0)
+        ctx._hw_manager.hardware.set_lights(rails=False)
+    ctx._hw_manager.hardware.set_button_light(0,1,0)
 
     ctx.comment(
         'Finished! \nMove deepwell plate (slot 5) to Station C for MMIX addition and qPCR preparation.')

@@ -287,8 +287,8 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # used tips counter
     tip_track = {
-        'counts': {p300: 0,
-                   m20: 0}
+        'counts': {p300: 0, m20: 0},
+        'maxes': {p300: len(tips200) * 96, m20: len(tips20)*96}
     }
 
     ############################################################################
