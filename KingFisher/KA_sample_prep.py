@@ -411,13 +411,13 @@ def run(ctx: protocol_api.ProtocolContext):
         os.system('mpg123 -f -14000 /etc/audio/speaker-test.mp3 &')
     for i in range(3):
         ctx._hw_manager.hardware.set_lights(rails=False)
-        ctx._hw_manager.hardware.set_button_light(1,0,0)
+        #ctx._hw_manager.hardware.set_button_light(1,0,0)
         time.sleep(0.3)
         ctx._hw_manager.hardware.set_lights(rails=True)
-        ctx._hw_manager.hardware.set_button_light(0,0,1)
+        #ctx._hw_manager.hardware.set_button_light(0,0,1)
         time.sleep(0.3)
         ctx._hw_manager.hardware.set_lights(rails=False)
-    ctx._hw_manager.hardware.set_button_light(0,1,0)
+    #ctx._hw_manager.hardware.set_button_light(0,1,0)
 
     ctx.comment(
         'Finished! \nMove deepwell plate (slot 5) to Station C for MMIX addition and qPCR preparation.')
