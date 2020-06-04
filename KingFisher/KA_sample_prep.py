@@ -2,7 +2,6 @@ import math
 from opentrons.types import Point
 from opentrons import protocol_api
 import time
-import os
 from timeit import default_timer as timer
 import json
 from datetime import datetime
@@ -46,7 +45,7 @@ screwcap_cross_section_area = math.pi * \
 
 
 def run(ctx: protocol_api.ProtocolContext):
-
+    import os
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
@@ -406,7 +405,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
-    import os
+
     if not ctx.is_simulating():
         os.system('mpg123 -f -14000 /etc/audio/speaker-test.mp3 &')
     for i in range(3):

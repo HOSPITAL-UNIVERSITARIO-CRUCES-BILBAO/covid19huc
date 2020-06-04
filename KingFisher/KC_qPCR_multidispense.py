@@ -24,19 +24,19 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 10
+NUM_SAMPLES = 16
 NUM_SAMPLES = NUM_SAMPLES -1 #Remove last sample (PC), done manually
 
 
 air_gap_vol = 5
 air_gap_sample = 2
-run_id = $run_id
+run_id = '$run_id'
 
 # Tune variables
 size_transfer = 8  # Number of wells the distribute function will fill
 volume_mmix = 20  # Volume of transfered master mix
 volume_sample = 5  # Volume of the sample
-volume_mmix_available = (NUM_SAMPLES * 1.1 * volume_mmix)  # Total volume of first screwcap
+volume_mmix_available = (NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
 diameter_screwcap = 8.25  # Diameter of the screwcap
 temperature = 25  # Temperature of temp module
@@ -49,8 +49,9 @@ h_cone = (volume_cone * 3 / area_section_screwcap)
 num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
-    from opentrons.drivers.rpi_drivers import gpio
-    gpio.set_rail_lights(False) #Turn off lights (termosensible reagents)
+    import os
+    #from opentrons.drivers.rpi_drivers import gpio
+    #gpio.set_rail_lights(False) #Turn off lights (termosensible reagents)
     ctx.comment('Actual used columns: ' + str(num_cols))
 
     # Define the STEPS of the protocol
@@ -65,7 +66,7 @@ def run(ctx: protocol_api.ProtocolContext):
             STEPS[s]['wait_time'] = 0
 
     #Folder and file_path for log time
-    folder_path = '/var/lib/jupyter/notebooks/'+run_id'
+    folder_path = '/var/lib/jupyter/notebooks/'+run_id
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
@@ -97,7 +98,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       flow_rate_aspirate = 1,
                       flow_rate_dispense = 1,
                       reagent_reservoir_volume = volume_mmix_available,
-                      num_wells = 2, #change with num samples
+                      num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,
                       v_fondo = volume_cone  # V cono
@@ -233,13 +234,13 @@ def run(ctx: protocol_api.ProtocolContext):
     # load labware and modules
     # 24 well rack
     tuberack = ctx.load_labware(
-        'opentrons_24_aluminumblock_generic_2ml_screwcap', '2',
+        'opentrons_24_aluminumblock_generic_2ml_screwcap', '1',
         'Bloque Aluminio opentrons 24 screwcaps 2000 µL ')
 
     ############################################
     # tempdeck
     tempdeck = ctx.load_module('tempdeck', '4')
-    tempdeck.set_temperature(temperature)
+    #tempdeck.set_temperature(temperature)
 
     ##################################
     # qPCR plate - final plate, goes to PCR
@@ -250,7 +251,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ##################################
     # Sample plate - comes from B
     source_plate = ctx.load_labware(
-        "kingfisher_std_96_wellplate_550ul", '1',
+        "kingfisher_std_96_wellplate_550ul", '2',
         'chilled KF plate with elutions (alum opentrons)')
     samples = source_plate.wells()[:NUM_SAMPLES]
 
@@ -360,19 +361,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     time.sleep(2)
     import os
-        os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
-
-    for i in range(3):
-        ctx._hw_manager.hardware.set_lights(rails=False)
-        ctx._hw_manager.hardware.set_button_light(1,0,0)
-        time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(rails=True)
-        ctx._hw_manager.hardware.set_button_light(0,0,1)
-        time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(rails=False)
-    ctx._hw_manager.hardware.set_button_light(0,1,0)
-
-    ctx.comment('Finished! \nMove plate to PCR')
+    #os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
 
     if STEPS[1]['Execute'] == True:
         total_used_vol = np.sum(used_vol)
@@ -389,3 +378,15 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[2]['Execute'] == True:
         ctx.comment('20 ul Used tips in total: ' + str(tip_track['counts'][m20]))
         ctx.comment('20 ul Used racks in total: ' + str(tip_track['counts'][m20] / 96))
+
+    for i in range(3):
+        ctx._hw_manager.hardware.set_lights(rails=False)
+        #ctx._hw_manager.hardware.set_button_light(1,0,0)
+        time.sleep(0.3)
+        ctx._hw_manager.hardware.set_lights(rails=True)
+        #ctx._hw_manager.hardware.set_button_light(0,0,1)
+        time.sleep(0.3)
+        ctx._hw_manager.hardware.set_lights(rails=False)
+    #ctx._hw_manager.hardware.set_button_light(0,1,0)
+
+    ctx.comment('Finished! \nMove plate to PCR')
