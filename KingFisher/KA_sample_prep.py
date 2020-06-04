@@ -32,6 +32,8 @@ lysis_volume = 100
 ic_volume = 10
 x_offset = [0,0]
 
+source_type='eppendorf_1.5ml' # or 'screwcap_2ml'
+
 # Screwcap variables
 diameter_screwcap = 8.25  # Diameter of the screwcap
 volume_cone = 50  # Volume in ul that fit in the screwcap cone
@@ -240,9 +242,14 @@ def run(ctx: protocol_api.ProtocolContext):
         samples_last_rack = NUM_SAMPLES - rack_num * 24
     else:
         rack_num = 4
+
+    source_tube_types={'screwcap_2ml': ['opentrons_24_tuberack_generic_2ml_screwcap','source tuberack with screwcap'],
+                        'eppendorf_1.5ml': ['opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap','source tuberack with eppendorf'],
+                        }
+
     source_racks = [ctx.load_labware(
-        'opentrons_24_tuberack_generic_2ml_screwcap', slot,
-        'source tuberack with screwcap' + str(i + 1)) for i, slot in enumerate(['4', '1', '6', '3'][:rack_num])
+        source_tube_types[source_type][0], slot,
+        source_tube_types[source_type][1] + str(i + 1)) for i, slot in enumerate(['4', '1', '6', '3'][:rack_num])
     ]
 
     lysis_source_rack = ctx.load_labware('opentrons_24_tuberack_generic_2ml_screwcap', '7',
