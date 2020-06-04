@@ -28,12 +28,12 @@ NUM_SAMPLES = 16
 #NUM_SAMPLES = NUM_SAMPLES -1 #Remove last sample (PC), done manually
 
 
-air_gap_vol = 5
+air_gap_vol = 30
 air_gap_sample = 2
 run_id = '$run_id'
 
 # Tune variables
-size_transfer = 8  # Number of wells the distribute function will fill
+size_transfer = 5  # Number of wells the distribute function will fill
 volume_mmix = 20  # Volume of transfered master mix
 volume_sample = 5  # Volume of the sample
 volume_mmix_available = (NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
@@ -42,8 +42,8 @@ diameter_screwcap = 8.25  # Diameter of the screwcap
 temperature = 25  # Temperature of temp module
 volume_cone = 50  # Volume in ul that fit in the screwcap cone
 x_offset = [0,0]
-pipette_allowed_capacity=170
-size_transfer = math.floor(pipette_allowed_capacity / volume_mmix)
+pipette_allowed_capacity=180
+#size_transfer = math.floor(pipette_allowed_capacity / volume_mmix)
 
 # Calculated variables
 area_section_screwcap = (np.pi * diameter_screwcap**2) / 4
@@ -59,8 +59,8 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': False, 'description': 'Transfer MMIX'},
-        2: {'Execute': True, 'description': 'Transfer elution'}
+        1: {'Execute': True, 'description': 'Transfer MMIX'},
+        2: {'Execute': False, 'description': 'Transfer elution'}
     }
 
     for s in STEPS:  # Create an empty wait_time
@@ -98,7 +98,7 @@ def run(ctx: protocol_api.ProtocolContext):
     MMIX = Reagent(name = 'Master Mix',
                       rinse = False,
                       flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
+                      flow_rate_dispense = 1.5,
                       reagent_reservoir_volume = volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
@@ -140,12 +140,14 @@ def run(ctx: protocol_api.ProtocolContext):
         pipette.touch_tip(speed=20, v_offset=-5)
         pipette.move_to(src.top(z=5))
         pipette.aspirate(air_gap)  # air gap
+
         for d in dest:
             pipette.dispense(air_gap, d.top())
             drop = d.top(z = disp_height)
             pipette.dispense(volume, drop)
-            pipette.move_to(d.top(z=5))
-            pipette.aspirate(air_gap)  # air gap
+            #pipette.move_to(d.top(z=5))
+            pipette.aspirate(air_gap,d.top(z=5))  # air gap
+
         try:
             pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
         except:
@@ -292,7 +294,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # setup up sample sources and destinations
     samples = source_plate.wells()[:NUM_SAMPLES]
     samples_multi = source_plate.rows()[0][:num_cols]
-    pcr_wells = qpcr_plate.wells()[:NUM_SAMPLES]
+    pcr_wells = qpcr_plate.wells()[:(NUM_SAMPLES)]
     pcr_wells_multi = qpcr_plate.rows()[0][:num_cols]
     # Divide destination wells in small groups for P300 pipette
     dests = list(divide_destinations(pcr_wells, size_transfer))
@@ -323,11 +325,14 @@ def run(ctx: protocol_api.ProtocolContext):
         for dest in dests:
             aspirate_volume=volume_mmix * len(dest) + extra_dispensal
             [pickup_height,col_change]=calc_height(MMIX, area_section_screwcap, aspirate_volume)
-            used_vol_temp = distribute_custom(
-            p300, volume = volume_mmix, src = MMIX.reagent_reservoir[MMIX.col], dest = dest,
+
+            used_vol_temp = distribute_custom(p300, volume = volume_mmix,
+            src = MMIX.reagent_reservoir[MMIX.col], dest = dest,
             waste_pool = MMIX.reagent_reservoir[MMIX.col], pickup_height = pickup_height,
             extra_dispensal = extra_dispensal)
+
             used_vol.append(used_vol_temp)
+
         p300.drop_tip()
         tip_track['counts'][p300]+=1
         #MMIX.unused_two = MMIX.vol_well
