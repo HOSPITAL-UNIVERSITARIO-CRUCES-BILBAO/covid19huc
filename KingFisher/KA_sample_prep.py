@@ -48,7 +48,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Add lysis buffer'},
+        1: {'Execute': False, 'description': 'Add lysis buffer'},
         2: {'Execute': True, 'description': 'Add samples (50ul)'},
         3: {'Execute': True, 'description': 'Add internal control (10ul)'}
     }

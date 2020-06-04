@@ -361,7 +361,7 @@ def run(ctx: protocol_api.ProtocolContext):
     time.sleep(2)
     import os
         os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
-        
+
     for i in range(3):
         ctx._hw_manager.hardware.set_lights(rails=False)
         ctx._hw_manager.hardware.set_button_light(1,0,0)
