@@ -340,7 +340,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                       dest=work_destinations_cols[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
                                       pickup_height=pickup_height, disp_height = -2,
-                                      rinse=rinse, blow_out = True, touch_tip=False)
+                                      rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 custom_mix(m300, Beads, work_destinations_cols[i] ,
                                    vol=70, rounds=10, blow_out=True, mix_height=8,
