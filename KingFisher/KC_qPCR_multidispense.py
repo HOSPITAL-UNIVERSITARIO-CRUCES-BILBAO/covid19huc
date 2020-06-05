@@ -387,7 +387,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     vol=vol, air_gap_vol=air_gap_vol, x_offset = x_offset,pickup_height=1,
                     rinse=False, disp_height=-10,blow_out=True, touch_tip=True)
             else:
-                move_vol_multichannel(p300, reagent=MMIX, source=source, dest=MMIX.reagent_reservoir[0],
+                move_vol_multichannel(p300, reagent=MMIX_components, source=source, dest=MMIX.reagent_reservoir[0],
                 vol=vol, air_gap_vol=air_gap_vol, x_offset=x_offset,pickup_height=1,
                 rinse=False, disp_height=-10,blow_out=True, touch_tip=True)
 
