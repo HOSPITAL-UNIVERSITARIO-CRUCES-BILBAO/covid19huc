@@ -50,9 +50,9 @@ pipette_allowed_capacity=170
 #############################################################
 MMIX_available={1: 'Seegene', 2: 'Universal', 3: 'Universal_IDT',4: 'Clinic', 5: 'Multiplex'}
 
-mmix_selection = 5 # select the mastermix to be used
+mmix_selection = 2 # select the mastermix to be used
 
-MMIX_vol={1: [17,1], 2: [20,1], 3: [20,1], 4: [40,2], 5:[20,2]} # volume of mastermixes per sample and number of wells in which is distributed
+MMIX_vol={1: [17,1], 2: [20,1], 3: [20,1], 4: [40,2], 5:[20,1]} # volume of mastermixes per sample and number of wells in which is distributed
 MMIX_recipe={1: [5, 5, 5, 2], 2: [8, 5, 1, 2, 2, 1, 1], 3: [12, 5, 1, 1, 1], 4: [1], 5:[6.25,1.25,12.5]} # Reactive volumes for the mmix
 
 size_transfer = math.floor(pipette_allowed_capacity / MMIX_vol[mmix_selection][0]) # Number of wells the distribute function will fill
@@ -136,17 +136,6 @@ def run(ctx: protocol_api.ProtocolContext):
                       v_fondo = volume_cone  # V cono
                       )
 
-    MMIX_components = Reagent(name = 'MMIX_component',
-                      rinse = False,
-                      flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
-                      reagent_reservoir_volume = 1000,
-                      num_wells = 1, #change with num samples
-                      delay = 0,
-                      h_cono = h_cone,
-                      v_fondo = volume_cone  # V cono
-                      )
-
     Elution = Reagent(name='Elution',
                       rinse=False,
                       flow_rate_aspirate = 1,
@@ -158,7 +147,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       v_fondo=0
                       )
 
-    Tackpath = Reagent(name = 'MMIX_multiplex_tackpath',
+    tackpath = Reagent(name = 'MMIX_multiplex_tackpath',
                       rinse = False,
                       flow_rate_aspirate = 1,
                       flow_rate_dispense = 1,
@@ -191,14 +180,76 @@ def run(ctx: protocol_api.ProtocolContext):
                       v_fondo = volume_cone  # V cono
                       )
 
+    component4 = Reagent(name = 'component4',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
+    component5 = Reagent(name = 'component5',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
+    component6 = Reagent(name = 'component6',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
+    component7 = Reagent(name = 'component7',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
+    component8 = Reagent(name = 'component8',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
     MMIX.vol_well = MMIX.vol_well_original
     Elution.vol_well = Elution.vol_well_original
-    Tackpath.vol_well = Tackpath.vol_well_original
+    tackpath.vol_well = tackpath.vol_well_original
     covid_assay.vol_well = covid_assay.vol_well_original
     mmix_water.vol_well = mmix_water.vol_well_original
+    component4.vol_well = component4.vol_well_original
+    component5.vol_well = component5.vol_well_original
+    component6.vol_well = component6.vol_well_original
+    component7.vol_well = component7.vol_well_original
+    component8.vol_well = component8.vol_well_original
 
-    MMIX_components=[Tackpath,covid_assay,mmix_water]
-
+################## Assign class type reactives to a summary
+    MMIX_components=[tackpath, covid_assay, mmix_water, component4, component5, component6, component7, component8]
+    MMIX_components=MMIX_components[:len(MMIX_make[mmix_selection])]
+##################
 
     ##################
     # Custom functions
@@ -215,7 +266,6 @@ def run(ctx: protocol_api.ProtocolContext):
         # Divide the list of destinations in size n lists.
         for i in range(0, len(l), n):
             a.append( l[i:i + n])
-
         return a
 
     def distribute_custom(pipette, reagent, volume, src, dest, waste_pool, pickup_height, extra_dispensal, disp_height=0):
@@ -276,8 +326,6 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, dest.top(z = 5), rate = 2)
-
-
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
     x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10,
@@ -424,24 +472,34 @@ def run(ctx: protocol_api.ProtocolContext):
         start = datetime.now()
         # Check if among the pipettes, p300_single is installed
         used_vol=[]
+        ctx.comment('#######################################################')
+        ctx.comment('Selected MMIX: '+MMIX_available[mmix_selection])
+        ctx.comment('#######################################################')
+
         for i,[source, vol] in enumerate(zip(MMIX_components_location, MMIX_make[mmix_selection])):
             pick_up(p300)
+            ctx.comment('#######################################################')
+            ctx.comment('Add component: '+MMIX_components[i].name)
+            ctx.comment('#######################################################')
             if (vol + air_gap_vol) > pipette_allowed_capacity: # because 200ul is the maximum volume of the tip we will choose 180
             # calculate what volume should be transferred in each step
                 vol_list=divide_volume(vol, pipette_allowed_capacity)
                 for vol in vol_list:
                     move_vol_multichannel(p300, reagent=MMIX_components[i], source=source, dest=MMIX.reagent_reservoir[0],
-                    vol=vol, air_gap_vol=air_gap_vol, x_offset = x_offset,pickup_height=1,
-                    rinse=False, disp_height=-10,blow_out=True, touch_tip=True)
+                    vol=vol, air_gap_vol=air_gap_vol, x_offset = x_offset, pickup_height=1, # should be changed with picku_up_height calculation
+                    rinse=False, disp_height=-10, blow_out=True, touch_tip=True, post_airgap=True)
             else:
                 move_vol_multichannel(p300, reagent=MMIX_components[i], source=source, dest=MMIX.reagent_reservoir[0],
-                vol=vol, air_gap_vol=air_gap_vol, x_offset=x_offset,pickup_height=1,
-                rinse=False, disp_height=-10,blow_out=True, touch_tip=True)
+                vol=vol, air_gap_vol=air_gap_vol, x_offset=x_offset,pickup_height=1, # should be changed with picku_up_height calculation
+                rinse=False, disp_height=-10, blow_out=True, touch_tip=True, post_airgap=True)
 
-            if i<len(MMIX_components):
+            if i+1<len(MMIX_components):
                 p300.drop_tip()
             else:
-                custom_mix(p300, reagent = MMIX, location = MMIX.reagent_reservoir[0], vol = 180, rounds = 3,
+                ctx.comment('#######################################################')
+                ctx.comment('Final mix')
+                ctx.comment('#######################################################')
+                custom_mix(p300, reagent = MMIX, location = MMIX.reagent_reservoir[0], vol = 180, rounds = 5,
                 blow_out = True, mix_height = 2, x_offset = x_offset)
                 p300.drop_tip()
 
