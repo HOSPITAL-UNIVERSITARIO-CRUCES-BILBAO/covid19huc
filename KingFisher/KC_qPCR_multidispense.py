@@ -377,7 +377,7 @@ def run(ctx: protocol_api.ProtocolContext):
         start = datetime.now()
         # Check if among the pipettes, p300_single is installed
         used_vol=[]
-        for source, vol in zip(MMIX.reagent_reservoir, MMIX_make[mmix_selection]):
+        for source, vol in zip(MMIX_components.reagent_reservoir, MMIX_make[mmix_selection]):
             pick_up(p300)
             if (vol + air_gap_vol) > pipette_allowed_capacity: # because 200ul is the maximum volume of the tip we will choose 180
             # calculate what volume should be transferred in each step
