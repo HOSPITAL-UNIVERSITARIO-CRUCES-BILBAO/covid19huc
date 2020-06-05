@@ -43,9 +43,11 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
 
-        1: {'Execute': False, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
+        1: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
         2: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1'},
-        3: {'Execute': False, 'description': 'Add 50 ul Elution Buffer'},}
+        3: {'Execute': True, 'description': 'Add 100 ul Lysis Buffer'},
+        4: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'}
+        }
 
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -99,6 +101,16 @@ def run(ctx: protocol_api.ProtocolContext):
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
+    Lysis = Reagent(name='Lysis Buffer',
+                          flow_rate_aspirate=0.75,
+                          flow_rate_dispense=0.5,
+                          rinse=False,
+                          delay=2,
+                          reagent_reservoir_volume=100000,
+                          num_wells=1,
+                          h_cono=1.95,
+                          v_fondo=695)  # Flat surface
+
     ElutionBuffer = Reagent(name='Elution Buffer',
                             flow_rate_aspirate=1,
                             flow_rate_dispense=1,
@@ -112,6 +124,7 @@ def run(ctx: protocol_api.ProtocolContext):
     WashBuffer1.vol_well = WashBuffer1.vol_well_original
     WashBuffer2.vol_well = WashBuffer2.vol_well_original
     ElutionBuffer.vol_well = ElutionBuffer.vol_well_original
+    Lysis.vol_well = Lysis.vol_well_original
 
     ##################
     # Custom functions
@@ -244,10 +257,6 @@ def run(ctx: protocol_api.ProtocolContext):
         'nest_12_reservoir_15ml', '3', 'Reservoir 12 channel, column 1')
 
 
-
-
-
-
     # Wash Buffer 1 100ul Deepwell plate
     ############################################
     WashBuffer1_100ul_plate1 = ctx.load_labware(
@@ -260,7 +269,10 @@ def run(ctx: protocol_api.ProtocolContext):
     WashBuffer2_100ul_plate1 = ctx.load_labware(
         'kf_96_wellplate_2400ul', '7', 'Wash Buffer 2 Deepwell plate 1')
 
-
+    # Lysis buffer 100ul Deepwell plate
+    ############################################
+    Lysisbuffer_100ul_plate1 = ctx.load_labware(
+        'kf_96_wellplate_2400ul', '9', 'Lysis buffer Deepwell plate 1')
 
     # Elution Deepwell plate
     ############################################
@@ -285,10 +297,15 @@ def run(ctx: protocol_api.ProtocolContext):
     )[0][(WashBuffer1.num_wells+WashBuffer2.num_wells):(WashBuffer1.num_wells
     +WashBuffer2.num_wells+ElutionBuffer.num_wells)]
 
+    Lysis.reagent_reservoir = reagent_res.rows(
+    )[0][(WashBuffer1.num_wells+WashBuffer2.num_wells+ElutionBuffer.num_wells):(WashBuffer1.num_wells
+    +WashBuffer2.num_wells+ElutionBuffer.num_wells+Lysis.num_wells)]
+
     # columns in destination plates to be filled depending the number of samples
     wb1plate1_destination = WashBuffer1_100ul_plate1.rows()[0][:num_cols]
     wb2plate1_destination = WashBuffer2_100ul_plate1.rows()[0][:num_cols]
     elutionbuffer_destination = ElutionBuffer_50ul_plate.rows()[0][:num_cols]
+    lysis_destination = Lysisbuffer_100ul_plate1.rows()[0][:num_cols]
 
     # pipette
     m300 = ctx.load_instrument(
@@ -377,12 +394,47 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
 
+    ############################################################################
+    # STEP 3 Filling with WashBuffer2 plate 1
+    ############################################################################
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
 
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+
+        lysis_vol = [100]
+        rinse = False  # Only first time
+
+        ########
+        # Wash buffer dispense
+        for i in range(num_cols):
+            if not m300.hw_pipette['has_tip']:
+                pick_up(m300)
+            for j, transfer_vol in enumerate(lysis_vol):
+                '''if (i == 0 and j == 0):
+                    rinse = True
+                else:
+                    rinse = False'''
+                move_vol_multichannel(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
+                               dest = lysis_destination[i], vol = transfer_vol,
+                               air_gap_vol = air_gap_vol, x_offset = x_offset,
+                               pickup_height = 1, rinse = Lysis.rinse, disp_height = -2,
+                               blow_out = True, touch_tip = False, post_airgap=True)
+
+        m300.drop_tip(home_after=False)
+        tip_track['counts'][m300] += 8
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:'] = str(time_taken)
 
 
 
     ############################################################################
-    # STEP 3 Transfer Elution buffer
+    # STEP 4 Transfer Elution buffer
     ############################################################################
 
     STEP += 1
@@ -418,6 +470,9 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         STEPS[STEP]['Time:'] = str(time_taken)
 
+
+
+############################################################################
     # Export the time log to a tsv file
     if not ctx.is_simulating():
         with open(file_path, 'w') as f:

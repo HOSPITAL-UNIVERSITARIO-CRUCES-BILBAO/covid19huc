@@ -33,16 +33,16 @@ air_gap_sample = 2
 run_id = '$run_id'
 
 # Tune variables
-size_transfer = 5  # Number of wells the distribute function will fill
-volume_mmix = 20  # Volume of transfered master mix
+size_transfer = 4  # Number of wells the distribute function will fill
+volume_mmix = 30  # Volume of transfered master mix
 volume_sample = 5  # Volume of the sample
-volume_mmix_available = (NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
+volume_mmix_available = 1000 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
 diameter_screwcap = 8.25  # Diameter of the screwcap
 temperature = 25  # Temperature of temp module
 volume_cone = 50  # Volume in ul that fit in the screwcap cone
 x_offset = [0,0]
-pipette_allowed_capacity=180
+pipette_allowed_capacity=170
 #size_transfer = math.floor(pipette_allowed_capacity / volume_mmix)
 
 # Calculated variables
@@ -98,7 +98,7 @@ def run(ctx: protocol_api.ProtocolContext):
     MMIX = Reagent(name = 'Master Mix',
                       rinse = False,
                       flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1.5,
+                      flow_rate_dispense = 1,
                       reagent_reservoir_volume = volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
@@ -132,21 +132,22 @@ def run(ctx: protocol_api.ProtocolContext):
 
         return a
 
-    def distribute_custom(pipette, volume, src, dest, waste_pool, pickup_height, extra_dispensal, disp_height=0):
+    def distribute_custom(pipette, reagent, volume, src, dest, waste_pool, pickup_height, extra_dispensal, disp_height=0):
         # Custom distribute function that allows for blow_out in different location and adjustement of touch_tip
         air_gap=10
         pipette.aspirate((len(dest) * volume) +
-                         extra_dispensal, src.bottom(pickup_height))
+                         extra_dispensal, src.bottom(pickup_height), rate = reagent.flow_rate_aspirate)
         pipette.touch_tip(speed=20, v_offset=-5)
         pipette.move_to(src.top(z=5))
-        pipette.aspirate(air_gap)  # air gap
+        pipette.aspirate(air_gap, rate = reagent.flow_rate_aspirate)  # air gap
 
         for d in dest:
-            pipette.dispense(air_gap, d.top())
+            pipette.dispense(air_gap, d.top(), rate = reagent.flow_rate_dispense)
             drop = d.top(z = disp_height)
-            pipette.dispense(volume, drop)
-            #pipette.move_to(d.top(z=5))
-            pipette.aspirate(air_gap,d.top(z=5))  # air gap
+            pipette.dispense(volume, drop, rate = reagent.flow_rate_dispense)
+            ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
+            pipette.move_to(d.top(z=5))
+            pipette.aspirate(air_gap,d.top(z=5), rate = reagent.flow_rate_aspirate)  # air gap
 
         try:
             pipette.blow_out(waste_pool.wells()[0].bottom(pickup_height + 3))
@@ -315,7 +316,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # STEP 1: Transfer Master MIX
     ############################################################################
-    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
+    ctx._hw_manager.hardware.set_lights(rails=True) # set lights off when using MMIX
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
@@ -325,8 +326,8 @@ def run(ctx: protocol_api.ProtocolContext):
         for dest in dests:
             aspirate_volume=volume_mmix * len(dest) + extra_dispensal
             [pickup_height,col_change]=calc_height(MMIX, area_section_screwcap, aspirate_volume)
-
-            used_vol_temp = distribute_custom(p300, volume = volume_mmix,
+            ctx.comment('destinations '+ str(dest))
+            used_vol_temp = distribute_custom(p300, reagent= MMIX, volume = volume_mmix,
             src = MMIX.reagent_reservoir[MMIX.col], dest = dest,
             waste_pool = MMIX.reagent_reservoir[MMIX.col], pickup_height = pickup_height,
             extra_dispensal = extra_dispensal)
