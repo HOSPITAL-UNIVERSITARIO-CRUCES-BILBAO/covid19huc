@@ -46,6 +46,36 @@ x_offset = [0,0]
 pipette_allowed_capacity=170
 #size_transfer = math.floor(pipette_allowed_capacity / volume_mmix)
 
+
+#############################################################
+#Available master mastermixes
+#############################################################
+MMIX_available={1: 'Seegene', 2: 'Universal', 3: 'Universal_IDT',4: 'Clinic', 5: 'Multiplex'}
+
+mmix_selection = 5 # select the mastermix to be used
+
+MMIX_vol={1: [17,1], 2: [20,1], 3: [20,1], 4: [40,2], 5:[20,2]} # volume of mastermixes per sample and number of wells in which is distributed
+MMIX_recipe={1: [5, 5, 5, 2], 2: [8, 5, 1, 2, 2, 1, 1], 3: [12, 5, 1, 1, 1], 4: [1], 5:[6.25,1.25,12.5]} # Reactive volumes for the mmix
+
+size_transfer = math.floor(pipette_allowed_capacity / MMIX_vol[mmix_selection][0]) # Number of wells the distribute function will fill
+
+MMIX_make_location = 9 # Cell C1 in which the first tube for the MMIX will be placed
+
+volume_mmix = MMIX_vol[mmix_selection][0]  # Volume of transfered master mix per well
+
+MMIX_make = {}
+for mmix_type in MMIX_recipe.keys():
+    MMIX_make[mmix_type] = []
+    for needed_vol in MMIX_recipe[mmix_type]:
+        MMIX_make[mmix_type].append(needed_vol * NUM_SAMPLES * 1.1)
+
+volume_mmix_available = (NUM_SAMPLES * 1.1 * MMIX_vol[mmix_selection][0])  # Total volume of mastermix that will be prepared
+
+
+#############################################
+
+
+
 # Calculated variables
 area_section_screwcap = (np.pi * diameter_screwcap**2) / 4
 h_cone = (volume_cone * 3 / area_section_screwcap)
@@ -60,8 +90,9 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Transfer MMIX'},
-        2: {'Execute': False, 'description': 'Transfer elution'}
+        1: {'Execute': True, 'description': 'Make MMIX'},
+        2: {'Execute': False, 'description': 'Transfer MMIX'},
+        3: {'Execute': False, 'description': 'Transfer elution'}
     }
 
     for s in STEPS:  # Create an empty wait_time
@@ -95,6 +126,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.tip_recycling = tip_recycling
             self.vol_well_original = reagent_reservoir_volume / num_wells
 
+
     # Reagents and their characteristics
     MMIX = Reagent(name = 'Master Mix',
                       rinse = False,
@@ -117,12 +149,58 @@ def run(ctx: protocol_api.ProtocolContext):
                       h_cono=0,
                       v_fondo=0
                       )
+    Tackpath = Reagent(name = 'MMIX_multiplex_tackpath',
+                  rinse = False,
+                  flow_rate_aspirate = 1,
+                  flow_rate_dispense = 1,
+                  reagent_reservoir_volume = 1000,
+                  num_wells = 1, #change with num samples
+                  delay = 0,
+                  h_cono = h_cone,
+                  v_fondo = volume_cone  # V cono
+                  )
+
+    covid_assay = Reagent(name = 'Covid19_assay',
+                  rinse = False,
+                  flow_rate_aspirate = 1,
+                  flow_rate_dispense = 1,
+                  reagent_reservoir_volume = 1000,
+                  num_wells = 1, #change with num samples
+                  delay = 0,
+                  h_cono = h_cone,
+                  v_fondo = volume_cone  # V cono
+                  )
+
+    mmix_water = Reagent(name = 'nuclease_free_water',
+                  rinse = False,
+                  flow_rate_aspirate = 1,
+                  flow_rate_dispense = 1,
+                  reagent_reservoir_volume = 1000,
+                  num_wells = 1, #change with num samples
+                  delay = 0,
+                  h_cono = h_cone,
+                  v_fondo = volume_cone  # V cono
+                  )
+
 
     MMIX.vol_well = MMIX.vol_well_original
     Elution.vol_well = Elution.vol_well_original
+    Tackpath.vol_well = Tackpath.vol_well_original
+    covid_assay.vol_well = covid_assay.vol_well_original
+    mmix_water.vol_well = mmix_water.vol_well_original
+
+    MMIX_components=[Tackpath,covid_assay,mmix_water]
+
 
     ##################
     # Custom functions
+    def divide_volume(volume,max_vol):
+        num_transfers=math.ceil(volume/max_vol)
+        vol_roundup=math.ceil(volume/num_transfers)
+        last_vol = volume - vol_roundup*(num_transfers-1)
+        vol_list = [vol_roundup for v in range(1,num_transfers)]
+        vol_list.append(last_vol)
+        return vol_list
 
 
     def divide_destinations(l, n):
@@ -292,7 +370,9 @@ def run(ctx: protocol_api.ProtocolContext):
     ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
     MMIX.reagent_reservoir = tuberack.rows()[0][:MMIX.num_wells] # 1 row, 2 columns (first ones)
+    MMIX_components_location=tuberack.wells()[MMIX_make_location:(MMIX_make_location + len(MMIX_make[mmix_selection]))]
     ctx.comment('Wells in: '+ str(tuberack.rows()[0][:MMIX.num_wells]) + ' element: '+str(MMIX.reagent_reservoir[MMIX.col]))
+
     # setup up sample sources and destinations
     samples = source_plate.wells()[:NUM_SAMPLES]
     samples_multi = source_plate.rows()[0][:num_cols]
@@ -305,17 +385,76 @@ def run(ctx: protocol_api.ProtocolContext):
     # pipettes
     m20 = ctx.load_instrument(
         'p20_multi_gen2', mount='left', tip_racks=tips20)
-    p20 = ctx.load_instrument(
-        'p20_single_gen2', mount='right', tip_racks=tips20)
+    p300 = ctx.load_instrument(
+        'p300_single_gen2', mount='right', tip_racks=tips200)
+
 
     # used tips counter
     tip_track = {
-        'counts': {p20: 0, m20: 0},
-        'maxes': {p20: len(tips20) * 96, m20: len(tips20)*96}
+        'counts': {p300: 0, m20: 0},
+        'maxes': {p300: len(tips200) * 96, m20: len(tips20)*96}
     }
 
+
+    ##########
+    # pick up tip and if there is none left, prompt user for a new rack
+    def pick_up(pip):
+        nonlocal tip_track
+        if not ctx.is_simulating():
+            if tip_track['counts'][pip] == tip_track['maxes'][pip]:
+                ctx.pause('Replace ' + str(pip.max_volume) + 'µl tipracks before \
+                resuming.')
+                pip.reset_tipracks()
+                tip_track['counts'][pip] = 0
+
+        if not pip.hw_pipette['has_tip']:
+            pip.pick_up_tip()
+    ##########
+
+
     ############################################################################
-    # STEP 1: Transfer Master MIX
+    # STEP 1: Make Master MIX
+    ############################################################################
+
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
+        # Check if among the pipettes, p300_single is installed
+        used_vol=[]
+        for i,[source, vol] in enumerate(zip(MMIX_components_location, MMIX_make[mmix_selection])):
+            pick_up(p300)
+            if (vol + air_gap_vol) > pipette_allowed_capacity: # because 200ul is the maximum volume of the tip we will choose 180
+            # calculate what volume should be transferred in each step
+                vol_list=divide_volume(vol, pipette_allowed_capacity)
+                for vol in vol_list:
+                    move_vol_multichannel(p300, reagent=MMIX_components[i], source=source, dest=MMIX.reagent_reservoir[0],
+                    vol=vol, air_gap_vol=air_gap_vol, x_offset = x_offset,pickup_height=1,
+                    rinse=False, disp_height=-10,blow_out=True, touch_tip=True)
+            else:
+                move_vol_multichannel(p300, reagent=MMIX_components[i], source=source, dest=MMIX.reagent_reservoir[0],
+                vol=vol, air_gap_vol=air_gap_vol, x_offset=x_offset,pickup_height=1,
+                rinse=False, disp_height=-10,blow_out=True, touch_tip=True)
+
+            if i<len(MMIX_components):
+                p300.drop_tip()
+            else:
+                custom_mix(p300, reagent = MMIX, location = MMIX.reagent_reservoir[0], vol = 180, rounds = 3,
+                blow_out = True, mix_height = 2, x_offset = x_offset)
+                p300.drop_tip()
+
+            tip_track['counts'][p300]+=1
+
+
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+
+    ############################################################################
+    # STEP 2: Transfer Master MIX
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=True) # set lights off when using MMIX
     STEP += 1
@@ -344,7 +483,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 2: TRANSFER Samples
+    # STEP 3: TRANSFER Samples
     ############################################################################
 
     STEP += 1
