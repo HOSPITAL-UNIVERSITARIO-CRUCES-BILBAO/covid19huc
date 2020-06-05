@@ -136,6 +136,17 @@ def run(ctx: protocol_api.ProtocolContext):
                       v_fondo = volume_cone  # V cono
                       )
 
+    MMIX_components = Reagent(name = 'MMIX_component',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
     Elution = Reagent(name='Elution',
                       rinse=False,
                       flow_rate_aspirate = 1,
