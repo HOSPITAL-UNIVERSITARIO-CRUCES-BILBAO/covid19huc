@@ -50,7 +50,7 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': False, 'description': 'Add lysis buffer'},
-        2: {'Execute': True, 'description': 'Add samples (50ul)'},
+        2: {'Execute': False, 'description': 'Add samples (50ul)'},
         3: {'Execute': True, 'description': 'Add internal control (10ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
@@ -390,7 +390,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                blow_out = False, touch_tip = False)
             # Mix the sample AFTER dispensing
             custom_mix(p20, reagent = Samples, location = d, vol = 10, rounds = 2,
-            blow_out = True, mix_height = 15, x_offset = x_offset)
+            blow_out = True, mix_height = 2, x_offset = x_offset)
             # Drop tip and update counter
             p20.drop_tip()
             tip_track['counts'][p20] += 1
