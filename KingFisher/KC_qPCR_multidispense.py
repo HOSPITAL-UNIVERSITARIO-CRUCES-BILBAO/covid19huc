@@ -48,12 +48,12 @@ pipette_allowed_capacity=170
 #############################################################
 #Available master mastermixes
 #############################################################
-MMIX_available={1: 'Seegene', 2: 'Universal', 3: 'Universal_IDT',4: 'Clinic'}
+MMIX_available={1: 'Seegene', 2: 'Universal', 3: 'Universal_IDT',4: 'Clinic', 5: 'Multiplex'}
 
-mmix_selection = 1 # select the mastermix to be used
+mmix_selection = 5 # select the mastermix to be used
 
-MMIX_vol={1: [17,1], 2: [20,1], 3: [20,1], 4: [40,2]} # volume of mastermixes per sample and number of wells in which is distributed
-MMIX_recipe={1: [5, 5, 5, 2], 2: [8, 5, 1, 2, 2, 1, 1], 3: [12, 5, 1, 1, 1], 4: [1]} # Reactive volumes for the mmix
+MMIX_vol={1: [17,1], 2: [20,1], 3: [20,1], 4: [40,2], 5:[20,2]} # volume of mastermixes per sample and number of wells in which is distributed
+MMIX_recipe={1: [5, 5, 5, 2], 2: [8, 5, 1, 2, 2, 1, 1], 3: [12, 5, 1, 1, 1], 4: [1], 5:[6.25,1.25,12.5]} # Reactive volumes for the mmix
 
 size_transfer = math.floor(pipette_allowed_capacity / MMIX_vol[mmix_selection][0]) # Number of wells the distribute function will fill
 
@@ -147,12 +147,57 @@ def run(ctx: protocol_api.ProtocolContext):
                       v_fondo=0
                       )
 
+    Tackpath = Reagent(name = 'MMIX_multiplex_tackpath',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
+    covid_assay = Reagent(name = 'Covid19_assay',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
+    mmix_water = Reagent(name = 'nuclease_free_water',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
     MMIX.vol_well = MMIX.vol_well_original
     Elution.vol_well = Elution.vol_well_original
+    Tackpath.vol_well = Tackpath.vol_well_original
+    covid_assay.vol_well = covid_assay.vol_well_original
+    mmix_water.vol_well = mmix_water.vol_well_original
+
+    MMIX_components=[Tackpath,covid_assay,mmix_water]
+
 
     ##################
     # Custom functions
-
+    def divide_volume(volume,max_vol):
+        num_transfers=math.ceil(volume/max_vol)
+        vol_roundup=math.ceil(volume/num_transfers)
+        last_vol = volume - vol_roundup*(num_transfers-1)
+        vol_list = [vol_roundup for v in range(1,num_transfers)]
+        vol_list.append(last_vol)
+        return vol_list
 
     def divide_destinations(l, n):
         a=[]
@@ -321,7 +366,9 @@ def run(ctx: protocol_api.ProtocolContext):
     ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
     MMIX.reagent_reservoir = tuberack.rows()[0][:MMIX.num_wells] # 1 row, 2 columns (first ones)
+    MMIX_components_location=tuberack.wells()[MMIX_make_location:(MMIX_make_location + len(MMIX_make[mmix_selection]))]
     ctx.comment('Wells in: '+ str(tuberack.rows()[0][:MMIX.num_wells]) + ' element: '+str(MMIX.reagent_reservoir[MMIX.col]))
+
     # setup up sample sources and destinations
     samples = source_plate.wells()[:NUM_SAMPLES]
     samples_multi = source_plate.rows()[0][:num_cols]
@@ -366,22 +413,30 @@ def run(ctx: protocol_api.ProtocolContext):
         start = datetime.now()
         # Check if among the pipettes, p300_single is installed
         used_vol=[]
-        for source, vol in zip(MMIX.reagent_reservoir, MMIX_make[mmix_selection]):
+        for i,[source, vol] in enumerate(zip(MMIX_components_location, MMIX_make[mmix_selection])):
             pick_up(p300)
             if (vol + air_gap_vol) > pipette_allowed_capacity: # because 200ul is the maximum volume of the tip we will choose 180
             # calculate what volume should be transferred in each step
                 vol_list=divide_volume(vol, pipette_allowed_capacity)
                 for vol in vol_list:
-                    move_vol_multichannel(p300, reagent=MMIX_components, source=source, dest=MMIX.reagent_reservoir[0],
+                    move_vol_multichannel(p300, reagent=MMIX_components[i], source=source, dest=MMIX.reagent_reservoir[0],
                     vol=vol, air_gap_vol=air_gap_vol, x_offset = x_offset,pickup_height=1,
                     rinse=False, disp_height=-10,blow_out=True, touch_tip=True)
             else:
-                move_vol_multichannel(p300, reagent=MMIX, source=source, dest=MMIX.reagent_reservoir[0],
+                move_vol_multichannel(p300, reagent=MMIX_components[i], source=source, dest=MMIX.reagent_reservoir[0],
                 vol=vol, air_gap_vol=air_gap_vol, x_offset=x_offset,pickup_height=1,
                 rinse=False, disp_height=-10,blow_out=True, touch_tip=True)
 
-            p300.drop_tip()
+            if i<len(MMIX_components):
+                p300.drop_tip()
+            else:
+                custom_mix(p300, reagent = MMIX, location = MMIX.reagent_reservoir[0], vol = 180, rounds = 3,
+                blow_out = True, mix_height = 2, x_offset = x_offset)
+                p300.drop_tip()
+
             tip_track['counts'][p300]+=1
+
+
 
         end = datetime.now()
         time_taken = (end - start)
@@ -446,6 +501,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         STEPS[STEP]['Time:'] = str(time_taken)
 
+
+    ############################################################################
     # Export the time log to a tsv file
     if not ctx.is_simulating():
         with open(file_path, 'w') as f:
