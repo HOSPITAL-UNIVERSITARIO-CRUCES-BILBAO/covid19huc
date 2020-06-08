@@ -24,7 +24,7 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 96
+NUM_SAMPLES = 48
 #NUM_SAMPLES = NUM_SAMPLES -1 #Remove last sample (PC), done manually
 
 
@@ -35,9 +35,8 @@ run_id = '$run_id'
 
 # Tune variables
 size_transfer = 4  # Number of wells the distribute function will fill
-volume_mmix = 20  # Volume of transfered master mix
 volume_sample = 5  # Volume of the sample
-volume_mmix_available = 1000 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
+volume_mmix_available = 50*20 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
 diameter_screwcap = 8.25  # Diameter of the screwcap
 temperature = 4  # Temperature of temp module
@@ -86,7 +85,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Make MMIX'},
+        1: {'Execute': False, 'description': 'Make MMIX'},
         2: {'Execute': True, 'description': 'Transfer MMIX'},
         3: {'Execute': True, 'description': 'Transfer elution'}
     }
@@ -357,7 +356,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, location.top(z = 5))
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 50):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 30):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
@@ -562,8 +561,9 @@ def run(ctx: protocol_api.ProtocolContext):
             #Source samples
             move_vol_multichannel(m20, reagent = Elution, source = s, dest = d,
             vol = volume_sample, air_gap_vol = air_gap_sample, x_offset = x_offset,
-                   pickup_height = 0.2, disp_height = -10, rinse = False,
-                   blow_out=True, touch_tip=True, post_airgap=True)
+                   pickup_height = 0.5, disp_height = -10, rinse = False,
+                   blow_out=True, touch_tip=False, post_airgap=True)
+            ## ADD Custom mix
             m20.drop_tip()
             tip_track['counts'][m20]+=8
 

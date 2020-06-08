@@ -27,7 +27,7 @@ metadata = {
 # Defined variables
 ##################
 run_id = '$run_id'
-NUM_SAMPLES = 96
+NUM_SAMPLES = 48
 air_gap_vol = 20
 
 x_offset = [0,0]
@@ -141,7 +141,7 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.dispense(post_airgap_vol, dest.top(z = -2))
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
-    x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10,
+    x_offset, source_height = 0.3, post_airgap=False, post_airgap_vol=10,
     post_dispense=False, post_dispense_vol=20):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
@@ -151,8 +151,8 @@ def run(ctx: protocol_api.ProtocolContext):
         mix_height: height from bottom to dispense
         '''
         mix_trap_volumne=1
-        if mix_height == 0:
-            mix_height = 3
+        if mix_height <= 0:
+            mix_height = 0.5
         pipet.aspirate(mix_trap_volumne, location=location.bottom(
             z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate)
         for _ in range(rounds):
@@ -169,7 +169,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_airgap == True:
             pipet.dispense(post_airgap_vol)
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 50):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 50):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
@@ -239,12 +239,12 @@ def run(ctx: protocol_api.ProtocolContext):
     # load labware and modules
     # 12 well rack
     reagent_res = ctx.load_labware(
-        'nest_12_reservoir_15ml', '2', 'Reagent deepwell plate')
+        'nest_12_reservoir_15ml', '5', 'Reagent deepwell plate')
 
     ##################################
     # Elution plate - final plate, goes to Kingfisher
     sample_plate = ctx.load_labware(
-        'kf_96_wellplate_2400ul', '1',
+        'kf_96_wellplate_2400ul', '3',
         'KF 96 Well 2400ul elution plate')
 
     ####################################
@@ -258,7 +258,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     tips200 = [
         ctx.load_labware('opentrons_96_filtertiprack_200ul', slot)
-        for slot in ['3']
+        for slot in ['8']
     ]
 
     # pipettes. P1000 currently deactivated
@@ -292,7 +292,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         # Mixing
         custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col], vol=70,
-                   rounds=10, blow_out=True, mix_height=6, x_offset = x_offset, post_dispense=True)
+                   rounds=10, blow_out=True, mix_height=6, x_offset = x_offset, post_dispense=True, source_height=0.3)
         ctx.comment('Finished premixing!')
         ctx.comment('Now, reagents will be transferred to deepwell plate.')
 
@@ -326,7 +326,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     ctx.comment(
                         'Mixing new reservoir column: ' + str(Beads.col))
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                               vol=70, rounds=10, blow_out=True, mix_height=0,
+                               vol=70, rounds=10, blow_out=True, mix_height=1,
                                x_offset = x_offset, post_dispense=True)
                 ctx.comment(
                     'Aspirate from reservoir column: ' + str(Beads.col))
@@ -339,7 +339,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent=Beads, source=Beads.reagent_reservoir[Beads.col],
                                       dest=work_destinations_cols[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=pickup_height, disp_height = 0,
+                                      pickup_height=pickup_height, disp_height = -2,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 '''custom_mix(m300, Beads, work_destinations_cols[i] ,

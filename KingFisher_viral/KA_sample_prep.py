@@ -23,7 +23,7 @@ metadata = {
 
 #Defined variables
 ##################
-NUM_SAMPLES = 16
+NUM_SAMPLES = 48
 air_gap_vol = 0
 run_id = 'test'
 volume_sample = 50
@@ -108,10 +108,10 @@ def run(ctx: protocol_api.ProtocolContext):
 
     IC = Reagent(name = 'Internal control',
                       flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
+                      flow_rate_dispense = 3,
                       rinse = False,
                       delay = 0,
-                      reagent_reservoir_volume = NUM_SAMPLES*10*1.1,
+                      reagent_reservoir_volume = NUM_SAMPLES*15*1.1,
                       num_wells = 1,  # num_cols comes from available columns
                       h_cono = h_cone,
                       v_fondo = volume_cone
@@ -200,7 +200,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, location.top(z = 5))
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 50):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4, extra_volume = 50):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
@@ -389,8 +389,8 @@ def run(ctx: protocol_api.ProtocolContext):
                                pickup_height = 1, rinse = LBuffer.rinse, disp_height = -10,
                                blow_out = False, touch_tip = False)
             # Mix the sample AFTER dispensing
-            custom_mix(p20, reagent = Samples, location = d, vol = 10, rounds = 2,
-            blow_out = True, mix_height = 2, x_offset = x_offset)
+            #custom_mix(p20, reagent = Samples, location = d, vol = 10, rounds = 2,
+            #blow_out = True, mix_height = 2, x_offset = x_offset)
             # Drop tip and update counter
             p20.drop_tip()
             tip_track['counts'][p20] += 1
