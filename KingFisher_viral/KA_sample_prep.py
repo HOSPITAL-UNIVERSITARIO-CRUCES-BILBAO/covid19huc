@@ -419,7 +419,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Light flash end of program
 
     if not ctx.is_simulating():
-        os.system('mpg123 -f -14000 /etc/audio/speaker-test.mp3 &')
+        os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
     for i in range(3):
         ctx._hw_manager.hardware.set_lights(rails=False)
         #ctx._hw_manager.hardware.set_button_light(1,0,0)
