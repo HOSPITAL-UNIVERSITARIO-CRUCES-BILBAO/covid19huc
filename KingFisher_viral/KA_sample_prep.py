@@ -23,7 +23,7 @@ metadata = {
 
 #Defined variables
 ##################
-NUM_SAMPLES = 48
+NUM_SAMPLES = 8
 air_gap_vol = 0
 run_id = 'test'
 volume_sample = 50
@@ -387,7 +387,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(p20, reagent = IC, source = ic_source, dest = d,
             vol = ic_volume, air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 1, rinse = LBuffer.rinse, disp_height = -10,
-                               blow_out = False, touch_tip = False)
+                               blow_out = True, touch_tip = False)
             # Mix the sample AFTER dispensing
             #custom_mix(p20, reagent = Samples, location = d, vol = 10, rounds = 2,
             #blow_out = True, mix_height = 2, x_offset = x_offset)
