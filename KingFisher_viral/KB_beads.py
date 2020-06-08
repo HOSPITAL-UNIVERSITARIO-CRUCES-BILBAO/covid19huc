@@ -28,7 +28,7 @@ metadata = {
 ##################
 run_id = '$run_id'
 NUM_SAMPLES = 96
-air_gap_vol = 15
+air_gap_vol = 20
 
 x_offset = [0,0]
 L_deepwell = 8  # Deepwell side length (KingFisher deepwell)

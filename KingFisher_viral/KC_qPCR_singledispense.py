@@ -14,7 +14,7 @@ metadata = {
     'protocolName': 'Station C Kingfisher Pathogen qPCR setup Version 2',
     'author': 'Malen Aguirregabiria, Aitor Gastaminza & José Luis Villanueva (jlvillanueva@clinic.cat)',
     'source': 'Hospital Clínic Barcelona, Hospital Universitario Cruces Bilbao',
-    'apiLevel': '2.0',
+    'apiLevel': '2.2',
     'description': 'Protocol for Kingfisher sample setup (C) - Viral Kit (ref )'
 
 }
@@ -24,11 +24,11 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 16
+NUM_SAMPLES = 96
 #NUM_SAMPLES = NUM_SAMPLES -1 #Remove last sample (PC), done manually
 
 
-air_gap_vol = 30
+air_gap_vol = 20
 air_gap_mmix = 0
 air_gap_sample = 2
 run_id = '$run_id'
@@ -40,7 +40,7 @@ volume_sample = 5  # Volume of the sample
 volume_mmix_available = 1000 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
 diameter_screwcap = 8.25  # Diameter of the screwcap
-temperature = 25  # Temperature of temp module
+temperature = 4  # Temperature of temp module
 volume_cone = 50  # Volume in ul that fit in the screwcap cone
 x_offset = [0,0]
 pipette_allowed_capacity=170
@@ -87,8 +87,8 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': True, 'description': 'Make MMIX'},
-        2: {'Execute': False, 'description': 'Transfer MMIX'},
-        3: {'Execute': False, 'description': 'Transfer elution'}
+        2: {'Execute': True, 'description': 'Transfer MMIX'},
+        3: {'Execute': True, 'description': 'Transfer elution'}
     }
 
     for s in STEPS:  # Create an empty wait_time
@@ -397,7 +397,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################
     # tempdeck
     tempdeck = ctx.load_module('tempdeck', '4')
-    #tempdeck.set_temperature(temperature)
+    tempdeck.set_temperature(temperature)
 
     ##################################
     # qPCR plate - final plate, goes to PCR
@@ -510,8 +510,10 @@ def run(ctx: protocol_api.ProtocolContext):
 
         end = datetime.now()
         time_taken = (end - start)
+        ctx.comment('#######################################################')
         ctx.comment('Step ' + str(STEP) + ': ' +
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
 
 
@@ -522,26 +524,28 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
-        p20.pick_up_tip()
+        p300.pick_up_tip()
 
         for dest in pcr_wells:
             [pickup_height, col_change] = calc_height(MMIX, area_section_screwcap, volume_mmix)
 
-            move_vol_multichannel(p20, reagent = MMIX, source = MMIX.reagent_reservoir[MMIX.col],
+            move_vol_multichannel(p300, reagent = MMIX, source = MMIX.reagent_reservoir[MMIX.col],
             dest = dest, vol = volume_mmix, air_gap_vol = air_gap_mmix, x_offset = x_offset,
                    pickup_height = pickup_height, disp_height = -10, rinse = False,
                    blow_out=True, touch_tip=True)
 
             #used_vol.append(used_vol_temp)
 
-        p20.drop_tip()
-        tip_track['counts'][p20]+=1
+        p300.drop_tip()
+        tip_track['counts'][p300]+=1
         #MMIX.unused_two = MMIX.vol_well
 
         end = datetime.now()
         time_taken = (end - start)
+        ctx.comment('#######################################################')
         ctx.comment('Step ' + str(STEP) + ': ' +
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
@@ -565,8 +569,10 @@ def run(ctx: protocol_api.ProtocolContext):
 
         end = datetime.now()
         time_taken = (end - start)
+        ctx.comment('#######################################################')
         ctx.comment('Step ' + str(STEP) + ': ' +
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
 
     # Export the time log to a tsv file

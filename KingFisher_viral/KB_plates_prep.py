@@ -28,8 +28,8 @@ metadata = {
 ##################
 
 NUM_SAMPLES = 96
-air_gap_vol = 15
-air_gap_vol_elutionbuffer = 0
+air_gap_vol = 10
+air_gap_vol_elutionbuffer = 10
 run_id =  '$run_id'
 
 x_offset = [0,0]
