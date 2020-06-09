@@ -14,9 +14,9 @@ metadata = {
     'protocolName': 'Kingfisher Pathogen Station B2 v2',
     'author': 'Aitor Gastaminza, Eva Gonzalez, José Luis Villanueva (jlvillanueva@clinic.cat)',
     'source': 'Hospital Clínic Barcelona, Hospital Cruces Barakaldo',
-    'apiLevel': '2.0',
-    'description': 'Protocol for RNA extraction preparation for ThermoFisher Pathogen kit (ref 4462359) \
-    setup - sample + beads + buffer preparation'
+    'apiLevel': '2.2',
+    'description': 'Protocol for RNA extraction preparation for ThermoFisher Viral kit (ref 48383) \
+    setup - sample + beads'
 }
 
 '''
@@ -72,10 +72,11 @@ def run(ctx: protocol_api.ProtocolContext):
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse,
                      reagent_reservoir_volume, delay, num_wells, h_cono, v_fondo,
-                      tip_recycling = 'none'):
+                      tip_recycling = 'none',flow_rate_mix = 1):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
+            self.flow_rate_mix = flow_rate_mix
             self.rinse = bool(rinse)
             self.reagent_reservoir_volume = reagent_reservoir_volume
             self.delay = delay
@@ -92,11 +93,11 @@ def run(ctx: protocol_api.ProtocolContext):
     # Reagents and their characteristics
 
     Beads = Reagent(name='Magnetic beads and Lysis',
-                    flow_rate_aspirate=1,
-                    flow_rate_dispense=3,
+                    flow_rate_aspirate=0.5,
+                    flow_rate_dispense=0.5,
                     rinse=True,
                     num_wells=1,
-                    delay=0,
+                    delay=2,
                     reagent_reservoir_volume=20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
@@ -154,14 +155,14 @@ def run(ctx: protocol_api.ProtocolContext):
         if mix_height <= 0:
             mix_height = 0.5
         pipet.aspirate(mix_trap_volumne, location=location.bottom(
-            z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate)
+            z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_mix)
         for _ in range(rounds):
             pipet.aspirate(vol, location=location.bottom(
-                z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate)
+                z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_mix)
             pipet.dispense(vol, location=location.bottom(
-                z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
+                z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_mix)
         pipet.dispense(mix_trap_volumne, location=location.bottom(
-            z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
+            z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_mix)
         if blow_out == True:
             pipet.blow_out(location.top(z = -2))
         if post_dispense == True:
@@ -320,7 +321,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 # Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(
                     reagent = Beads, cross_section_area = multi_well_rack_area,
-                    aspirate_volume = transfer_vol * 8, min_height=0.5, extra_volume=10)
+                    aspirate_volume = transfer_vol * 8, min_height=0.3, extra_volume=10)
 
                 if change_col == True:  # If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment(
@@ -339,7 +340,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent=Beads, source=Beads.reagent_reservoir[Beads.col],
                                       dest=work_destinations_cols[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=pickup_height, disp_height = -2,
+                                      pickup_height=pickup_height, disp_height = -3,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 '''custom_mix(m300, Beads, work_destinations_cols[i] ,
@@ -356,6 +357,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         STEPS[STEP]['Time:'] = str(time_taken)
 
+    ############################################################################
     # Export the time log to a tsv file
     if not ctx.is_simulating():
         with open(file_path, 'w') as f:

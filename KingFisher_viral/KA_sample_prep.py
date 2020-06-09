@@ -385,9 +385,9 @@ def run(ctx: protocol_api.ProtocolContext):
             # Mix the sample BEFORE dispensing
             #custom_mix(p1000, reagent = Samples, location = s, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
             move_vol_multichannel(p20, reagent = IC, source = ic_source, dest = d,
-            vol = ic_volume, air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 1, rinse = LBuffer.rinse, disp_height = -10,
-                               blow_out = True, touch_tip = False)
+                                  vol = ic_volume, air_gap_vol = air_gap_vol, x_offset = x_offset,
+                                  pickup_height = 1, rinse = IC.rinse, disp_height = -10,
+                                  blow_out = True, touch_tip = False)
             # Mix the sample AFTER dispensing
             #custom_mix(p20, reagent = Samples, location = d, vol = 10, rounds = 2,
             #blow_out = True, mix_height = 2, x_offset = x_offset)

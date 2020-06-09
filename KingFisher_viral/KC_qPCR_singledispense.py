@@ -24,7 +24,7 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 48
+NUM_SAMPLES = 8
 #NUM_SAMPLES = NUM_SAMPLES -1 #Remove last sample (PC), done manually
 
 
@@ -41,8 +41,9 @@ extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
 diameter_screwcap = 8.25  # Diameter of the screwcap
 temperature = 4  # Temperature of temp module
 volume_cone = 50  # Volume in ul that fit in the screwcap cone
+tube_type='screwcap_2ml' #'eppendorf_1.5ml'
 x_offset = [0,0]
-pipette_allowed_capacity=170
+pipette_allowed_capacity=180
 #size_transfer = math.floor(pipette_allowed_capacity / volume_mmix)
 
 
@@ -259,12 +260,10 @@ def run(ctx: protocol_api.ProtocolContext):
         return vol_list
 
 
-    def divide_destinations(l, n):
+    def divide_destinations(l, n): # Divide the list of destinations in size n lists.
         a=[]
-        # Divide the list of destinations in size n lists.
         for i in range(0, len(l), n):
             a.append( l[i:i + n])
-
         return a
 
     def distribute_custom(pipette, reagent, volume, src, dest, waste_pool, pickup_height, extra_dispensal, disp_height=0):
@@ -561,7 +560,7 @@ def run(ctx: protocol_api.ProtocolContext):
             #Source samples
             move_vol_multichannel(m20, reagent = Elution, source = s, dest = d,
             vol = volume_sample, air_gap_vol = air_gap_sample, x_offset = x_offset,
-                   pickup_height = 0.5, disp_height = -10, rinse = False,
+                   pickup_height = 0.8, disp_height = -10, rinse = False,
                    blow_out=True, touch_tip=False, post_airgap=True)
             ## ADD Custom mix
             m20.drop_tip()
