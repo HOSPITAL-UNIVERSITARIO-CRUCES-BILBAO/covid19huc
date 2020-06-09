@@ -24,12 +24,12 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 8
+NUM_SAMPLES = 96
 #NUM_SAMPLES = NUM_SAMPLES -1 #Remove last sample (PC), done manually
 
 
 air_gap_vol = 20
-air_gap_mmix = 0
+air_gap_mmix = 5
 air_gap_sample = 2
 run_id = '$run_id'
 
@@ -39,7 +39,7 @@ volume_sample = 5  # Volume of the sample
 volume_mmix_available = 50*20 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
 diameter_screwcap = 8.25  # Diameter of the screwcap
-temperature = 4  # Temperature of temp module
+temperature = 8  # Temperature of temp module
 volume_cone = 50  # Volume in ul that fit in the screwcap cone
 tube_type='screwcap_2ml' #'eppendorf_1.5ml'
 x_offset = [0,0]
@@ -87,7 +87,7 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': False, 'description': 'Make MMIX'},
-        2: {'Execute': True, 'description': 'Transfer MMIX'},
+        2: {'Execute': False, 'description': 'Transfer MMIX'},
         3: {'Execute': True, 'description': 'Transfer elution'}
     }
 
@@ -128,7 +128,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       rinse = False,
                       flow_rate_aspirate = 1,
                       flow_rate_dispense = 1,
-                      reagent_reservoir_volume = volume_mmix_available,
+                      reagent_reservoir_volume = 2000, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,
@@ -138,9 +138,9 @@ def run(ctx: protocol_api.ProtocolContext):
     Elution = Reagent(name='Elution',
                       rinse=False,
                       flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
+                      flow_rate_dispense = 2,
                       reagent_reservoir_volume=50,
-                      delay=0,
+                      delay=1,
                       num_wells=num_cols,  # num_cols comes from available columns
                       h_cono=0,
                       v_fondo=0
@@ -323,7 +323,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, dest.top(z = 5), rate = 2)
+            pipet.aspirate(post_airgap_vol, dest.top(z = 5), rate = 2)
 
 
 
@@ -395,7 +395,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################
     # tempdeck
     tempdeck = ctx.load_module('tempdeck', '4')
-    tempdeck.set_temperature(temperature)
+    #tempdeck.set_temperature(temperature)
 
     ##################################
     # qPCR plate - final plate, goes to PCR
@@ -530,7 +530,7 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(p300, reagent = MMIX, source = MMIX.reagent_reservoir[MMIX.col],
             dest = dest, vol = volume_mmix, air_gap_vol = air_gap_mmix, x_offset = x_offset,
                    pickup_height = pickup_height, disp_height = -10, rinse = False,
-                   blow_out=True, touch_tip=True)
+                   blow_out=True, touch_tip=False)
 
             #used_vol.append(used_vol_temp)
 
@@ -560,8 +560,8 @@ def run(ctx: protocol_api.ProtocolContext):
             #Source samples
             move_vol_multichannel(m20, reagent = Elution, source = s, dest = d,
             vol = volume_sample, air_gap_vol = air_gap_sample, x_offset = x_offset,
-                   pickup_height = 0.8, disp_height = -10, rinse = False,
-                   blow_out=True, touch_tip=False, post_airgap=True)
+                   pickup_height = 0.3, disp_height = -10, rinse = False,
+                   blow_out=True, touch_tip=True, post_airgap=False)
             ## ADD Custom mix
             m20.drop_tip()
             tip_track['counts'][m20]+=8

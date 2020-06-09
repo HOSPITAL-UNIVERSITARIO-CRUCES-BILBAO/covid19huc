@@ -28,7 +28,7 @@ metadata = {
 ##################
 run_id = '$run_id'
 NUM_SAMPLES = 96
-air_gap_vol = 20
+air_gap_vol = 5
 
 x_offset = [0,0]
 L_deepwell = 8  # Deepwell side length (KingFisher deepwell)
@@ -92,18 +92,18 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # Reagents and their characteristics
 
-    Beads = Reagent(name='Magnetic beads and Lysis',
-                    flow_rate_aspirate=0.5,
-                    flow_rate_dispense=0.5,
+    IC = Reagent(name='Magnetic beads and Lysis',
+                    flow_rate_aspirate=1,
+                    flow_rate_dispense=3,
                     rinse=True,
                     num_wells=1,
                     delay=2,
-                    reagent_reservoir_volume=2200,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=1050,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
 
-    Beads.vol_well = Beads.vol_well_original
+    IC.vol_well = IC.vol_well_original
 
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
                        pickup_height, rinse, disp_height, blow_out, touch_tip,
@@ -168,7 +168,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_dispense == True:
             pipet.dispense(post_dispense_vol)
         if post_airgap == True:
-            pipet.aspirate(post_airgap_vol)
+            pipet.dispense(post_airgap_vol)
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 50):
         nonlocal ctx
@@ -245,66 +245,32 @@ def run(ctx: protocol_api.ProtocolContext):
     ##################################
     # Elution plate - final plate, goes to Kingfisher
     sample_plate = ctx.load_labware(
-        'kf_96_wellplate_2400ul', '3',
+        'kf_96_wellplate_2400ul', '8',
         'KF 96 Well 2400ul elution plate')
 
-    ####################################
-    # load labware and modules
-    # 24 well rack aluminium opentrons
-    #tuberack = ctx.load_labware(
-    #    'opentrons_24_aluminumblock_generic_2ml_screwcap', '3',
-    #    'Bloque Aluminio opentrons 24 Screwcaps')
-
-    ##################################
-
-    tips200 = [
-        ctx.load_labware('opentrons_96_filtertiprack_200ul', slot)
-        for slot in ['8']
+    tips20 = [
+        ctx.load_labware('opentrons_96_filtertiprack_20ul', slot)
+        for slot in ['2']
     ]
 
     # pipettes. P1000 currently deactivated
-    m300 = ctx.load_instrument(
-        'p300_multi_gen2', 'right', tip_racks=tips200)  # Load p300 multi pipette
+    m20 = ctx.load_instrument(
+        'p20_multi_gen2', 'left', tip_racks=tips20)  # Load p300 multi pipette
 
     tip_track = {
-        'counts': {m300: 0},
-        'maxes': {m300: len(tips200) * 96}
+        'counts': {m20: 0},
+        'maxes': {m20: len(tips20) * 96}
     }
 
     # Divide destination wells in small groups for P300 pipette
     #destinations = list(divide_destinations(sample_plate.wells()[:NUM_SAMPLES], size_transfer))
-    Beads.reagent_reservoir = reagent_res.rows()[0][:Beads.num_wells]  # 1 row, 4 columns (first ones)
+    IC.reagent_reservoir = reagent_res.rows()[0][10]  # 1 row, 4 columns (first ones)
     #pipette multiple  definition jump example play
     work_destinations_cols = sample_plate.rows()[0][:num_cols]
 
-    ############################################################################
-    # STEP 1: PREMIX BEADS
-    ############################################################################
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-
-        start = datetime.now()
-        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
-        ctx.comment('###############################################')
-        if not m300.hw_pipette['has_tip']:
-            pick_up(m300)
-            ctx.comment('Tip picked up')
-        ctx.comment('Mixing ' + Beads.name)
-
-        # Mixing
-        custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col], vol=70,
-                   rounds=10, blow_out=True, mix_height=6, x_offset = x_offset, post_dispense=True, source_height=0.3)
-        ctx.comment('Finished premixing!')
-        ctx.comment('Now, reagents will be transferred to deepwell plate.')
-
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('Step ' + str(STEP) + ': ' +
-                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
-        STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 2: TRANSFER BEADS
+    # STEP 1: TRANSFER IC
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
@@ -312,44 +278,32 @@ def run(ctx: protocol_api.ProtocolContext):
         start = datetime.now()
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
-        beads_transfer_vol = [20]  # Two rounds of 130
+        IC_transfer_vol = [10]  # Two rounds of 130
         rinse = True
         for i in range(num_cols):
-            if not m300.hw_pipette['has_tip']:
-                pick_up(m300)
-            for j, transfer_vol in enumerate(beads_transfer_vol):
+            if not m20.hw_pipette['has_tip']:
+                pick_up(m20)
+            for j, transfer_vol in enumerate(IC_transfer_vol):
                 # Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(
-                    reagent = Beads, cross_section_area = multi_well_rack_area,
-                    aspirate_volume = transfer_vol * 8, min_height=0.3, extra_volume=10)
+                    reagent = IC, cross_section_area = multi_well_rack_area,
+                    aspirate_volume = transfer_vol * 8, min_height=0.2, extra_volume=5)
 
-                if change_col == True:  # If we switch column because there is not enough volume left in current reservoir column we mix new column
-                    ctx.comment(
-                        'Mixing new reservoir column: ' + str(Beads.col))
-                    custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                               vol=70, rounds=10, blow_out=True, mix_height=1,
-                               x_offset = x_offset, post_dispense=True)
                 ctx.comment(
-                    'Aspirate from reservoir column: ' + str(Beads.col))
+                    'Aspirate from reservoir column: ' + str(IC.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
 
+                rinse = False
 
-                if j != 0:
-                    rinse = False
-
-                move_vol_multichannel(m300, reagent=Beads, source=Beads.reagent_reservoir[Beads.col],
+                move_vol_multichannel(m20, reagent=IC, source=IC.reagent_reservoir,
                                       dest=work_destinations_cols[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=pickup_height, disp_height = -8,
+                                      pickup_height=pickup_height, disp_height = -41,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
-                '''custom_mix(m300, Beads, work_destinations_cols[i] ,
-                                   vol=70, rounds=10, blow_out=True, mix_height=8,
-                                   x_offset = x_offset, source_height=0.5, post_dispense=True)'''
 
-
-        m300.drop_tip(home_after=False)
-        tip_track['counts'][m300] += 8
+                m20.drop_tip(home_after=False)
+                tip_track['counts'][m20] += 8
 
         end = datetime.now()
         time_taken = (end - start)
@@ -374,8 +328,8 @@ def run(ctx: protocol_api.ProtocolContext):
     # Light flash end of program
 
     import os
-    #if not ctx.is_simulating():
-        #os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
+    if not ctx.is_simulating():
+        os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
     for i in range(3):
         ctx._hw_manager.hardware.set_lights(rails=False)
         #ctx._hw_manager.hardware.set_button_light(1,0,0)

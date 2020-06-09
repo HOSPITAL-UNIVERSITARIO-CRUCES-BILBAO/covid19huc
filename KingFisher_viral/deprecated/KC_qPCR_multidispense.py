@@ -34,7 +34,7 @@ run_id = '$run_id'
 
 # Tune variables
 size_transfer = 4  # Number of wells the distribute function will fill
-volume_mmix = 30  # Volume of transfered master mix
+volume_mmix = 20  # Volume of transfered master mix
 volume_sample = 5  # Volume of the sample
 volume_mmix_available = 1000 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
@@ -42,7 +42,7 @@ diameter_screwcap = 8.25  # Diameter of the screwcap
 temperature = 25  # Temperature of temp module
 volume_cone = 50  # Volume in ul that fit in the screwcap cone
 x_offset = [0,0]
-pipette_allowed_capacity=170
+pipette_allowed_capacity=180
 #size_transfer = math.floor(pipette_allowed_capacity / volume_mmix)
 
 #############################################################
@@ -50,7 +50,7 @@ pipette_allowed_capacity=170
 #############################################################
 MMIX_available={1: 'Seegene', 2: 'Universal', 3: 'Universal_IDT',4: 'Clinic', 5: 'Multiplex'}
 
-mmix_selection = 2 # select the mastermix to be used
+mmix_selection = 5 # select the mastermix to be used
 
 MMIX_vol={1: [17,1], 2: [20,1], 3: [20,1], 4: [40,2], 5:[20,1]} # volume of mastermixes per sample and number of wells in which is distributed
 MMIX_recipe={1: [5, 5, 5, 2], 2: [8, 5, 1, 2, 2, 1, 1], 3: [12, 5, 1, 1, 1], 4: [1], 5:[6.25,1.25,12.5]} # Reactive volumes for the mmix
@@ -67,7 +67,7 @@ for mmix_type in MMIX_recipe.keys():
     for needed_vol in MMIX_recipe[mmix_type]:
         MMIX_make[mmix_type].append(needed_vol * NUM_SAMPLES * 1.1)
 
-volume_mmix_available = (NUM_SAMPLES * 1.1 * MMIX_vol[mmix_selection][0])  # Total volume of mastermix that will be prepared
+volume_mmix_available = (NUM_SAMPLES * 1.25 * MMIX_vol[mmix_selection][0])  # Total volume of mastermix that will be prepared
 
 
 #############################################
@@ -88,8 +88,8 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Make MMIX'},
-        2: {'Execute': False, 'description': 'Transfer MMIX'},
+        1: {'Execute': False, 'description': 'Make MMIX'},
+        2: {'Execute': True, 'description': 'Transfer MMIX'},
         3: {'Execute': False, 'description': 'Transfer elution'}
     }
 
@@ -529,9 +529,9 @@ def run(ctx: protocol_api.ProtocolContext):
             [pickup_height,col_change]=calc_height(MMIX, area_section_screwcap, aspirate_volume)
             ctx.comment('destinations '+ str(dest))
             used_vol_temp = distribute_custom(p300, reagent= MMIX, volume = volume_mmix,
-            src = MMIX.reagent_reservoir[MMIX.col], dest = dest,
-            waste_pool = MMIX.reagent_reservoir[MMIX.col], pickup_height = pickup_height,
-            extra_dispensal = extra_dispensal)
+                src = MMIX.reagent_reservoir[MMIX.col], dest = dest,
+                waste_pool = MMIX.reagent_reservoir[MMIX.col], pickup_height = pickup_height,
+                extra_dispensal = extra_dispensal)
 
             used_vol.append(used_vol_temp)
 

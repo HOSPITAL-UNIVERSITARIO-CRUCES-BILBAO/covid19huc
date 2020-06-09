@@ -23,7 +23,7 @@ metadata = {
 
 #Defined variables
 ##################
-NUM_SAMPLES = 8
+NUM_SAMPLES = 94
 air_gap_vol = 0
 run_id = 'test'
 volume_sample = 50
@@ -31,7 +31,7 @@ lysis_volume = 100
 ic_volume = 10
 x_offset = [0,0]
 
-source_type='eppendorf_1.5ml' # or 'screwcap_2ml'
+source_type='screwcap_2ml' #'eppendorf_1.5ml' # or 'screwcap_2ml'
 
 # Screwcap variables
 diameter_screwcap = 8.25  # Diameter of the screwcap
@@ -100,7 +100,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       flow_rate_dispense = 1,
                       rinse = False,
                       delay = 0,
-                      reagent_reservoir_volume = NUM_SAMPLES*100*1.1,
+                      reagent_reservoir_volume = 1000, #NUM_SAMPLES*100*1.1,
                       num_wells = 1,  # num_cols comes from available columns
                       h_cono = h_cone,
                       v_fondo = volume_cone
@@ -168,7 +168,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, dest.top(z = 5))
+            pipet.aspirate(post_airgap_vol, dest.top(z = 5))
 
 
 
@@ -377,6 +377,8 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
 
+        #BEWARE, everything with the same tip!
+        
         # Transfer parameters
         start = datetime.now()
         for d in destinations:
@@ -386,14 +388,14 @@ def run(ctx: protocol_api.ProtocolContext):
             #custom_mix(p1000, reagent = Samples, location = s, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
             move_vol_multichannel(p20, reagent = IC, source = ic_source, dest = d,
                                   vol = ic_volume, air_gap_vol = air_gap_vol, x_offset = x_offset,
-                                  pickup_height = 1, rinse = IC.rinse, disp_height = -10,
+                                  pickup_height = 0.4, rinse = IC.rinse, disp_height = -8,
                                   blow_out = True, touch_tip = False)
             # Mix the sample AFTER dispensing
             #custom_mix(p20, reagent = Samples, location = d, vol = 10, rounds = 2,
             #blow_out = True, mix_height = 2, x_offset = x_offset)
             # Drop tip and update counter
-            p20.drop_tip()
-            tip_track['counts'][p20] += 1
+        p20.drop_tip()
+        tip_track['counts'][p20] += 1
 
         # Time statistics
         end = datetime.now()

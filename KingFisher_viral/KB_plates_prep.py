@@ -27,7 +27,7 @@ metadata = {
 #Defined variables
 ##################
 
-NUM_SAMPLES = 48
+NUM_SAMPLES = 96
 air_gap_vol = 10
 air_gap_vol_elutionbuffer = 10
 run_id =  '$run_id'
@@ -86,7 +86,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=100*NUM_SAMPLES*1.1,
+                          reagent_reservoir_volume=100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -96,7 +96,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=100*NUM_SAMPLES*1.1,
+                          reagent_reservoir_volume=100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -106,7 +106,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=0.5,
                           rinse=False,
                           delay=2,
-                          reagent_reservoir_volume=100*NUM_SAMPLES*1.1,
+                          reagent_reservoir_volume=100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -116,7 +116,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             flow_rate_dispense=1,
                             rinse=False,
                             delay=0,
-                            reagent_reservoir_volume=50*NUM_SAMPLES*1.1,
+                            reagent_reservoir_volume=5500,#50*NUM_SAMPLES,
                             num_wells=1,
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
@@ -157,12 +157,13 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
         if blow_out == True:
             pipet.blow_out(dest.top(z = -2))
+        if post_airgap == True:
+            pipet.dispense(post_airgap_vol, dest.top(z = -2))
         if post_dispense == True:
             pipet.dispense(post_dispense_vol, dest.top(z = -2))
         if touch_tip == True:
-            pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
-        if post_airgap == True:
-            pipet.dispense(post_airgap_vol, dest.top(z = 5))
+            pipet.touch_tip(speed = 20, dest.top(z = -2), v_offset = -5, radius = 0.9)
+
 
 
 
