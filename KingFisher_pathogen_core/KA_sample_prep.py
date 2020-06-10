@@ -26,12 +26,13 @@ metadata = {
 NUM_SAMPLES = 94
 air_gap_vol = 0
 run_id = 'test'
-volume_sample = 50
-lysis_volume = 100
+volume_sample = 200
+
 ic_volume = 10
 x_offset = [0,0]
 
-source_type='screwcap_2ml' #'eppendorf_1.5ml' # or 'screwcap_2ml'
+tube_types=['screwcap_2ml','eppendorf_1.5ml']
+source_type=tube_types[0] #'eppendorf_1.5ml' # or 'screwcap_2ml'
 
 # Screwcap variables
 diameter_screwcap = 8.25  # Diameter of the screwcap
@@ -49,9 +50,8 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': False, 'description': 'Add lysis buffer'},
-        2: {'Execute': False, 'description': 'Add samples (50ul)'},
-        3: {'Execute': True, 'description': 'Add internal control (10ul)'}
+        1: {'Execute': True, 'description': 'Add samples ('+str(volume_sample)+'ul)'},
+        3: {'Execute': False, 'description': 'Add internal control one by one (10ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -68,7 +68,7 @@ def run(ctx: protocol_api.ProtocolContext):
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse,
                      reagent_reservoir_volume, delay, num_wells, h_cono, v_fondo,
-                      tip_recycling = 'none', rinse_loops = 3):
+                      tip_recycling = 'none',rinse_loops = 2):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -96,17 +96,6 @@ def run(ctx: protocol_api.ProtocolContext):
                       v_fondo = volume_cone
                       )  # cone
 
-    LBuffer = Reagent(name = 'Lysis buffer',
-                      flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
-                      rinse = False,
-                      delay = 0,
-                      reagent_reservoir_volume = 1000, #NUM_SAMPLES*100*1.1,
-                      num_wells = 1,  # num_cols comes from available columns
-                      h_cono = h_cone,
-                      v_fondo = volume_cone
-                      )  # cone
-
     IC = Reagent(name = 'Internal control',
                       flow_rate_aspirate = 1,
                       flow_rate_dispense = 3,
@@ -119,7 +108,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       )  # cone
 
     Samples.vol_well = Samples.vol_well_original
-    LBuffer.vol_well = LBuffer.vol_well_original
+
     IC.vol_well = IC.vol_well_original
 
     ##################
@@ -264,10 +253,6 @@ def run(ctx: protocol_api.ProtocolContext):
         source_tube_types[source_type][1] + str(i + 1)) for i, slot in enumerate(['4', '1', '6', '3'][:rack_num])
     ]
 
-    lysis_source_rack = ctx.load_labware('opentrons_24_tuberack_generic_2ml_screwcap', '7',
-    'Lysis source')
-    lysis_source = lysis_source_rack.wells()[0] # lysis comes from 1 bottle
-
     ic_source_rack = ctx.load_labware('opentrons_24_tuberack_generic_2ml_screwcap', '9',
     'Internal control source')
 
@@ -297,6 +282,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     p20 = ctx.load_instrument(
         'p20_single_gen2', mount='left', tip_racks=tips20)
+
     p300 = ctx.load_instrument(
         'p300_single_gen2', mount='right', tip_racks=tips300)  # load P1000 pipette
 
@@ -307,39 +293,7 @@ def run(ctx: protocol_api.ProtocolContext):
     }
 
     ############################################################################
-    # STEP 1: Add lysis buffer
-    ############################################################################
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
-        ctx.comment('###############################################')
-
-        # Transfer parameters
-        start = datetime.now()
-        for d in destinations:
-            if not p300.hw_pipette['has_tip']:
-                pick_up(p300)
-            # Mix the sample BEFORE dispensing
-            #custom_mix(p1000, reagent = Samples, location = s, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
-            move_vol_multichannel(p300, reagent = LBuffer, source = lysis_source, dest = d,
-            vol = lysis_volume, air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 1, rinse = LBuffer.rinse, disp_height = -10,
-                               blow_out = False, touch_tip = False)
-            # Mix the sample AFTER dispensing
-            #custom_mix(p1000, reagent = Samples, location = d, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
-            # Drop tip and update counter
-            p300.drop_tip()
-            tip_track['counts'][p300] += 1
-
-        # Time statistics
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] +
-                    ' took ' + str(time_taken))
-        STEPS[STEP]['Time:'] = str(time_taken)
-
-    ############################################################################
-    # STEP 2: Add Samples
+    # STEP 1: Add Samples
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
@@ -371,7 +325,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 3: Add internal control
+    # STEP 2: Add internal control
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:

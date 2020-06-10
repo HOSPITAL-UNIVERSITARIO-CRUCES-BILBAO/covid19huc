@@ -72,7 +72,7 @@ def run(ctx: protocol_api.ProtocolContext):
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse,
                      reagent_reservoir_volume, delay, num_wells, h_cono, v_fondo,
-                      tip_recycling = 'none',flow_rate_mix = 1):
+                      tip_recycling = 'none',flow_rate_mix = 1, rinse_loops = 2):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -88,6 +88,7 @@ def run(ctx: protocol_api.ProtocolContext):
             self.unused=[]
             self.tip_recycling = tip_recycling
             self.vol_well_original = reagent_reservoir_volume / num_wells
+            self.rinse_loops = rinse_loops
 
 
     # Reagents and their characteristics
