@@ -30,8 +30,16 @@ metadata = {
 NUM_SAMPLES = 96
 air_gap_vol = 10
 air_gap_vol_elutionbuffer = 10
+ic = 10
+lysis_vol = 260
+wait = 600
+beads_vol = 260
+wash_buffer1_vol = 300
+wash_buffer2_vol = 300
+elution_buffer_vol = 90
+pipette_allowed_capacity=180
+max_multiwell_volume = 13500
 run_id =  '$run_id'
-
 x_offset = [0,0]
 multi_well_rack_area = 8.2 * 71.2  # Cross section of the 12 well reservoir
 num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
