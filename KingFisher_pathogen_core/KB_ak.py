@@ -99,7 +99,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           rinse=True,
                           delay=2,
                           reagent_reservoir_volume=100*NUM_SAMPLES,
-                          num_wells=4,
+                          num_wells=3,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
@@ -109,7 +109,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           rinse=True,
                           delay=2,
                           reagent_reservoir_volume=100*NUM_SAMPLES,
-                          num_wells=5,
+                          num_wells=7,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
@@ -119,7 +119,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           rinse=False,
                           delay=2,
                           reagent_reservoir_volume=100*NUM_SAMPLES,
-                          num_wells=2,
+                          num_wells=9,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
@@ -137,7 +137,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         flow_rate_aspirate=0.5,
                         flow_rate_dispense=0.5,
                         rinse=True,
-                        num_wells=3,
+                        num_wells=11,
                         delay=2,
                         reagent_reservoir_volume=2200,#20 * NUM_SAMPLES * 1.1,
                         h_cono=1.95,
@@ -149,7 +149,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             rinse=False,
                             delay=0,
                             reagent_reservoir_volume=5500,#50*NUM_SAMPLES,
-                            num_wells=6,
+                            num_wells=11,
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
 
@@ -311,8 +311,10 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # IC 12 well rack
     ############################################
-    reagent_res = ctx.load_labware(
+    ic_res = ctx.load_labware(
         'nest_12_reservoir_15ml', '4', 'Reservoir 12 channel, column 1')
+
+
 
     # Wash Buffer 1 100ul Deepwell plate
     ############################################
@@ -332,7 +334,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Elution Deepwell plate
     ############################################
     ElutionBuffer_50ul_plate = ctx.load_labware(
-        'kingfisher_std_96_wellplate_550ul', '10', 'Elution Buffer 50 ul STD plate')
+        'kingfisher_std_96_wellplate_550ul', '10', 'Elution Buffer 90 ul STD plate')
 
     # Samples
     ############################################
@@ -351,27 +353,32 @@ def run(ctx: protocol_api.ProtocolContext):
 ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
     WashBuffer1.reagent_reservoir = reagent_res.rows(
-    )[0][:WashBuffer1.num_wells] # position 1
+    )[0][:WashBuffer1.num_wells] # position 1-3 colums
 
     WashBuffer2.reagent_reservoir = reagent_res.rows(
-    )[0][WashBuffer1.num_wells:(WashBuffer1.num_wells+WashBuffer2.num_wells)] #position 2
-
-    ElutionBuffer.reagent_reservoir = reagent_res.rows(
-    )[0][(WashBuffer1.num_wells+WashBuffer2.num_wells):(WashBuffer1.num_wells
-    +WashBuffer2.num_wells+ElutionBuffer.num_wells)] #position 3
+    )[0][WashBuffer1.num_wells:WashBuffer2.num_wells] #position 3,colums 7
 
     Lysis.reagent_reservoir = reagent_res.rows(
-    )[0][(WashBuffer1.num_wells+WashBuffer2.num_wells+ElutionBuffer.num_wells):(WashBuffer1.num_wells
-    +WashBuffer2.num_wells+ElutionBuffer.num_wells+Lysis.num_wells)] #position 4
+    )[0][WashBuffer2.num_wells:Lysis.num_wells] #position 7, colums 9
+
+    Beads.reagent_reservoir = reagent_res.rows(
+    )[0][Lysis.num_wells:Beads.num_wells] #position 9, 11 columns
+
+    ElutionBuffer.reagent_reservoir = reagent_res.rows(
+    )[0][ElutionBuffer.num_wells:] #position 11
+
+    ############################################################################
+    IC.reagent_reservoir = ic_res.rows(
+    )[0][:1] #position 1
 
     # columns in destination plates to be filled depending the number of samples
     wb1plate1_destination = WashBuffer1_100ul_plate1.rows()[0][:num_cols]
     wb2plate1_destination = WashBuffer2_100ul_plate1.rows()[0][:num_cols]
     elutionbuffer_destination = ElutionBuffer_50ul_plate.rows()[0][:num_cols]
     lysis_destination = Lysisbuffer_100ul_plate1.rows()[0][:num_cols]
+    kf_destination = kf_plate.rows()[0][:num_cols]
     #destinations = list(divide_destinations(sample_plate.wells()[:NUM_SAMPLES], size_transfer))
-    IC.reagent_reservoir = reagent_res.rows()[0][10]  # 1 row, 4 columns (first ones)
-    #pipette multiple  definition jump example play
+    IC_destination = reagent_res.rows()[0][:num_cols]
     work_destinations_cols = kf_plate.rows()[0][:num_cols]
 
 
@@ -380,23 +387,15 @@ def run(ctx: protocol_api.ProtocolContext):
         'p300_multi_gen2', 'right', tip_racks=tips300)  # Load multi pipette
 
     m20 = ctx.load_instrument(
-        'p20_multi_gen2', 'left', tip_racks=tips20)  # Load p300 multi pipette
+        'p20_multi_gen2', 'left', tip_racks=tips20)  # Load multi pipette
 
 
     # used tip counter and set maximum tips available
     tip_track = {
-        'counts': {m300: 0},
-        'maxes': {m300: len(tips300)*96}
+        'counts': {m300: 0, m20: 0},
+        'maxes': {m300: len(tips300)*96, m20: len(tips20)*96 }
     }
-
-    tip_track = {
-        'counts': {m20: 0},
-        'maxes': {m20: len(tips20) * 96}
-    }
-
-
-
-
+    
     ############################################################################
     # STEP 1: Add internal control
     ############################################################################
