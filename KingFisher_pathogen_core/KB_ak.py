@@ -32,7 +32,7 @@ air_gap_vol = 10
 air_gap_vol_elutionbuffer = 10
 ic = 10
 lysis_vol = 260
-wait = 600
+wait_time = 600
 beads_vol = 260
 wash_buffer1_vol = 300
 wash_buffer2_vol = 300
@@ -53,7 +53,7 @@ def run(ctx: protocol_api.ProtocolContext):
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': True,  'description': 'Add internal control (10ul)'},
         2: {'Execute': True, 'description': 'Add 260ul Lysis Buffer'},
-        3: {'Execute': False, 'description': 'Wait 10'},
+        3: {'Execute': False, 'description': 'Wait 10 minutes', 'wait_time': wait_time},
         4: {'Execute': False, 'description': 'Transfer 260ul beads'},
         5: {'Execute': False, 'description': 'Add 300ul Wash Buffer 1 - Round 1'},
         6: {'Execute': False, 'description': 'Add 450ul Wash Buffer 2 - Round 1'},
@@ -268,6 +268,15 @@ def run(ctx: protocol_api.ProtocolContext):
             col_change = False
         return height, col_change
 
+
+        def divide_volume(volume,max_vol):
+            num_transfers=math.ceil(volume/max_vol)
+            vol_roundup=math.ceil(volume/num_transfers)
+            last_vol = volume - vol_roundup*(num_transfers-1)
+            vol_list = [vol_roundup for v in range(1,num_transfers)]
+            vol_list.append(last_vol)
+            return vol_list
+
     ##########
     # pick up tip and if there is none left, prompt user for a new rack
     def pick_up(pip):
@@ -476,12 +485,22 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # STEP 3 wait 10
     ############################################################################
-
-
-
-
-
-
+    STEP += 1
+    if STEPS[STEP]['Execute']==True:
+    #Transfer magnetic beads
+        start = datetime.now()
+        ctx.comment(' ')
+        ctx.comment('###############################################')
+        ctx.comment('Step '+str(STEP)+': '+STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+        ctx.comment(' ')
+        ctx.delay(seconds=STEPS[STEP]['wait_time'], msg='Incubating for ' + format(STEPS[STEP]['wait_time']) + ' seconds.') # minutes=2
+        ctx.comment(' ')
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:']=str(time_taken)
+        ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
 
     ############################################################################
     # STEP 4: TRANSFER BEADS
