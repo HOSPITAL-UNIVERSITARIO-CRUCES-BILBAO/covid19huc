@@ -383,8 +383,10 @@ def run(ctx: protocol_api.ProtocolContext):
 
         rinse = False  # Only first time
         ########
-        # Wash buffer dispense
-        for i in range(num_cols):
+        # IC dispense
+        # this scheme is only for a trial in which in half of the rack IC is dispensed
+        # in the bottom and the other half directly from the top
+        for i in range(num_cols/2):
             if not m20.hw_pipette['has_tip']:
                 pick_up(m20)
             move_vol_multichannel(m20, reagent = IC, source = IC.reagent_reservoir[IC.col],
@@ -394,6 +396,18 @@ def run(ctx: protocol_api.ProtocolContext):
                            blow_out = False, touch_tip = False, post_airgap=True)
             m20.drop_tip(home_after=False)
             tip_track['counts'][m20] += 8
+
+
+        for i in range(num_cols/2,num_cols):
+            if not m20.hw_pipette['has_tip']:
+                pick_up(m20)
+            move_vol_multichannel(m20, reagent = IC, source = IC.reagent_reservoir[IC.col],
+                           dest = kf_destination[i], vol = ic_volume,
+                           air_gap_vol = air_gap_vol, x_offset = x_offset,
+                           pickup_height = 1, rinse = IC.rinse, disp_height = -3,
+                           blow_out = False, touch_tip = False, post_airgap=True)
+        m20.drop_tip(home_after=False)
+        tip_track['counts'][m20] += 8
 
         end = datetime.now()
         time_taken = (end - start)

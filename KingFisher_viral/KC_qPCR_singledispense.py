@@ -87,9 +87,13 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': False, 'description': 'Make MMIX'},
-        2: {'Execute': False, 'description': 'Transfer MMIX'},
-        3: {'Execute': True, 'description': 'Transfer elution'}
+        2: {'Execute': False, 'description': 'Transfer MMIX with P300'},
+        3: {'Execute': True, 'description': 'Transfer MMIX with P20'},
+        4: {'Execute': True, 'description': 'Transfer elution'}
     }
+
+    if STEPS[2]['Execute']==True:
+        STEPS[3]['Execute']=False # just to make sure it P300 is being used, do not load P20 single
 
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -441,15 +445,25 @@ def run(ctx: protocol_api.ProtocolContext):
     # pipettes
     m20 = ctx.load_instrument(
         'p20_multi_gen2', mount='left', tip_racks=tips20)
-    p300 = ctx.load_instrument(
+
+    if STEPS[2]['Execute']==True:
+        p300 = ctx.load_instrument(
         'p300_single_gen2', mount='right', tip_racks=tips200)
-
-
-    # used tips counter
-    tip_track = {
-        'counts': {p300: 0, m20: 0},
-        'maxes': {p300: len(tips200) * 96, m20: len(tips20)*96}
-    }
+        # used tips counter
+        tip_track = {
+            'counts': {p300: 0, m20: 0},
+            'maxes': {p300: len(tips200) * 96, m20: len(tips20)*96}
+        }
+    else:
+        tips20mmix = [ ctx.load_labware('opentrons_96_filtertiprack_20ul', slot)
+                        for slot in ['8'] ]
+        p20 = ctx.load_instrument(
+        'p20_single_gen2', mount='right', tip_racks=tips20mmix)
+        # used tips counter
+        tip_track = {
+            'counts': {p20: 0, m20: 0},
+            'maxes': {p20: len(tips200) * 96, m20: len(tips20)*96}
+        }
 
     ##########
     # pick up tip and if there is none left, prompt user for a new rack
@@ -517,7 +531,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
 
     ############################################################################
-    # STEP 2: Transfer Master MIX
+    # STEP 2: Transfer Master MIX with P300
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=True) # set lights off when using MMIX
     STEP += 1
@@ -548,7 +562,38 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 3: TRANSFER Samples
+    # STEP 3: Transfer Master MIX with P20
+    ############################################################################
+    ctx._hw_manager.hardware.set_lights(rails=True) # set lights off when using MMIX
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
+        p20.pick_up_tip()
+
+        for dest in pcr_wells:
+            [pickup_height, col_change] = calc_height(MMIX, area_section_screwcap, volume_mmix)
+
+            move_vol_multichannel(p20, reagent = MMIX, source = MMIX.reagent_reservoir[MMIX.col],
+            dest = dest, vol = volume_mmix, air_gap_vol = 0, x_offset = x_offset,
+                   pickup_height = pickup_height, disp_height = -10, rinse = False,
+                   blow_out=True, touch_tip=True)
+
+            #used_vol.append(used_vol_temp)
+
+        p20.drop_tip()
+        tip_track['counts'][p20]+=1
+        #MMIX.unused_two = MMIX.vol_well
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('#######################################################')
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        ctx.comment('#######################################################')
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+    ############################################################################
+    # STEP 4: TRANSFER Samples
     ############################################################################
 
     STEP += 1
@@ -605,9 +650,23 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('200 ul Used tips in total: ' + str(tip_track['counts'][p300]))
         ctx.comment('200 ul Used racks in total: ' + str(tip_track['counts'][p300] / 96))'''
 
-    if STEPS[2]['Execute'] == True:
+    if (STEPS[3]['Execute'] == True & STEPS[4]['Execute'] == True):
+        ctx.comment('20 ul Used tips in total: ' + str(tip_track['counts'][m20]+tip_track['counts'][p20]))
+        ctx.comment('20 ul Used racks in total: ' + str((tip_track['counts'][m20]+tip_track['counts'][p20]) / 96))
+
+    if (STEPS[2]['Execute'] == True & STEPS[4]['Execute'] == True):
+        ctx.comment('200 ul Used tips in total: ' + str(tip_track['counts'][p300]))
+        ctx.comment('200 ul Used racks in total: ' + str(tip_track['counts'][p300] / 96))
         ctx.comment('20 ul Used tips in total: ' + str(tip_track['counts'][m20]))
-        ctx.comment('20 ul Used racks in total: ' + str(tip_track['counts'][m20] / 96))
+        ctx.comment('20 ul Used racks in total: ' + str((tip_track['counts'][m20] / 96)))
+
+    if (STEPS[2]['Execute'] == True & STEPS[4]['Execute'] == False):
+        ctx.comment('200 ul Used tips in total: ' + str(tip_track['counts'][p300]))
+        ctx.comment('200 ul Used racks in total: ' + str(tip_track['counts'][p300] / 96))
+
+    if (STEPS[3]['Execute'] == False & STEPS[4]['Execute'] == True):
+        ctx.comment('20 ul Used tips in total: ' + str(tip_track['counts'][m20]))
+        ctx.comment('20 ul Used racks in total: ' + str((tip_track['counts'][m20] / 96)))
 
     for i in range(3):
         ctx._hw_manager.hardware.set_lights(rails=False)

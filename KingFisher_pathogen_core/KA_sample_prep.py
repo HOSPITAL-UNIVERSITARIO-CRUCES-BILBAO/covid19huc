@@ -13,7 +13,7 @@ metadata = {
     'author': 'Malen Aguirregabiria, Aitor Gastaminza, Arkaitz Monteju & José Luis Villanueva (jlvillanueva@clinic.cat)',
     'source': 'Hospital Clínic Barcelona, Hospital Universitario Cruces Bilbao',
     'apiLevel': '2.0',
-    'description': 'Protocol for Kingfisher sample setup viral (A)'
+    'description': 'Protocol for Kingfisher sample setup Pathogen Kit (ref 4462359) using CORE script'
 }
 
 '''
@@ -23,16 +23,17 @@ metadata = {
 
 #Defined variables
 ##################
-NUM_SAMPLES = 94
+NUM_SAMPLES = 96
+NUM_SAMPLES = NUM_SAMPLES - 2 # exclude positive and negative controls!
 air_gap_vol = 0
 run_id = 'test'
 volume_sample = 200
-
 ic_volume = 10
+
 x_offset = [0,0]
 
-tube_types=['screwcap_2ml','eppendorf_1.5ml']
-source_type=tube_types[0] #'eppendorf_1.5ml' # or 'screwcap_2ml'
+tube_types=['Screwcap 2ml','Eppendorf 1.5ml']
+source_type=tube_types[0] #'Eppendorf 1.5ml' # or 'Screwcap 2ml'
 
 # Screwcap variables
 diameter_screwcap = 8.25  # Diameter of the screwcap
@@ -51,8 +52,10 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': True, 'description': 'Add samples ('+str(volume_sample)+'ul)'},
-        3: {'Execute': False, 'description': 'Add internal control one by one (10ul)'}
+        2: {'Execute': False, 'description': 'Add internal control one by one (10ul)'}
+        # We won't use it as we will do it in KB with the multichannel pipette
     }
+
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
             STEPS[s]['wait_time'] = 0
@@ -244,8 +247,8 @@ def run(ctx: protocol_api.ProtocolContext):
     else:
         rack_num = 4
 
-    source_tube_types={'screwcap_2ml': ['opentrons_24_tuberack_generic_2ml_screwcap','source tuberack with screwcap'],
-                        'eppendorf_1.5ml': ['opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap','source tuberack with eppendorf'],
+    source_tube_types={'Screwcap 2ml': ['opentrons_24_tuberack_generic_2ml_screwcap','source tuberack with screwcap'],
+                        'Eppendorf 1.5ml': ['opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap','source tuberack with eppendorf'],
                         }
 
     source_racks = [ctx.load_labware(
@@ -332,7 +335,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
 
-        #BEWARE, everything with the same tip!
+        #BEWARE, everything with the same tip, dispensed from top!
 
         # Transfer parameters
         start = datetime.now()
