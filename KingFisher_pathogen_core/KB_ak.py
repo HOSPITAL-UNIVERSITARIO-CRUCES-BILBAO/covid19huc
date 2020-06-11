@@ -53,11 +53,11 @@ def run(ctx: protocol_api.ProtocolContext):
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': True,  'description': 'Add internal control (10ul)'},
         2: {'Execute': True, 'description': 'Add 260ul Lysis Buffer'},
-        3: {'Execute': False, 'description': 'Wait 10 minutes', 'wait_time': wait_time},
-        4: {'Execute': False, 'description': 'Transfer 260ul beads'},
-        5: {'Execute': False, 'description': 'Add 300ul Wash Buffer 1 - Round 1'},
-        6: {'Execute': False, 'description': 'Add 450ul Wash Buffer 2 - Round 1'},
-        7: {'Execute': False, 'description': 'Add 90ul Elution Buffer'}
+        3: {'Execute': True, 'description': 'Wait 10 minutes', 'wait_time': wait_time},
+        4: {'Execute': True, 'description': 'Transfer 260ul beads'},
+        5: {'Execute': True, 'description': 'Add 300ul Wash Buffer 1 - Round 1'},
+        6: {'Execute': True, 'description': 'Add 450ul Wash Buffer 2 - Round 1'},
+        7: {'Execute': True, 'description': 'Add 90ul Elution Buffer'}
         }
 
     for s in STEPS:  # Create an empty wait_time
@@ -98,8 +98,8 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=wash_buffer1_vol*NUM_SAMPLES,
-                          num_wells=3,
+                          reagent_reservoir_volume=wash_buffer2_vol*1.1*NUM_SAMPLES,
+                          num_wells=math.ceil((NUM_SAMPLES + 5) * wash_buffer2_vol / max_multiwell_volume),
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
@@ -108,8 +108,8 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=wash_buffer2_vol*NUM_SAMPLES,
-                          num_wells=7,
+                          reagent_reservoir_volume=wash_buffer1_vol*1.1*NUM_SAMPLES,
+                          num_wells=math.ceil((NUM_SAMPLES + 5) * wash_buffer1_vol / max_multiwell_volume),
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
@@ -118,7 +118,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=0.5,
                           rinse=False,
                           delay=2,
-                          reagent_reservoir_volume=lysis_vol*NUM_SAMPLES,
+                          reagent_reservoir_volume= 260 *NUM_SAMPLES,
                           num_wells=9,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -132,7 +132,7 @@ def run(ctx: protocol_api.ProtocolContext):
                         num_wells = 1,  # num_cols comes from available columns
                         h_cono = 1.95,
                         v_fondo = 695)  # cone
-
+    '''
     Beads = Reagent(name='Magnetic beads',
                         flow_rate_aspirate=0.5,
                         flow_rate_dispense=0.5,
@@ -141,6 +141,16 @@ def run(ctx: protocol_api.ProtocolContext):
                         delay=2,
                         reagent_reservoir_volume=beads_vol*NUM_SAMPLES,#20 * NUM_SAMPLES * 1.1,
                         h_cono=1.95,
+                        v_fondo=695)  # Prismatic'''
+
+    Beads = Reagent(name='Magnetic beads',
+                        flow_rate_aspirate=0.5,
+                        flow_rate_dispense=0.5,
+                        rinse=True,
+                        num_wells=math.ceil((NUM_SAMPLES + 5) * beads_vol / max_multiwell_volume),
+                        delay=2,
+                        reagent_reservoir_volume=beads_vol*1.15*NUM_SAMPLES,#20 * NUM_SAMPLES * 1.1,
+                        h_cono=1.95,
                         v_fondo=695)  # Prismatic
 
     ElutionBuffer = Reagent(name='Elution Buffer',
@@ -148,8 +158,8 @@ def run(ctx: protocol_api.ProtocolContext):
                             flow_rate_dispense=1,
                             rinse=False,
                             delay=0,
-                            reagent_reservoir_volume=elution_buffer_vol*NUM_SAMPLES,#50*NUM_SAMPLES,
-                            num_wells=11,
+                            reagent_reservoir_volume=elution_buffer_vol*1.1*NUM_SAMPLES,#50*NUM_SAMPLES,
+                            num_wells=math.ceil((NUM_SAMPLES + 5) * elution_buffer_vol / max_multiwell_volume),
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
 
@@ -162,17 +172,6 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ##################
     # Custom functions
-    def generate_source_table(source):
-        '''
-        Concatenate the wells from the different origin racks
-        '''
-        for rack_number in range(len(source)):
-            if rack_number == 0:
-                s = source[rack_number].wells()
-            else:
-                s = s + source[rack_number].wells()
-        return s
-
 
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
                        pickup_height, rinse, disp_height, blow_out, touch_tip,
@@ -269,7 +268,7 @@ def run(ctx: protocol_api.ProtocolContext):
         return height, col_change
 
 
-        def divide_volume(volume,max_vol):
+    def divide_volume(volume,max_vol):
             num_transfers=math.ceil(volume/max_vol)
             vol_roundup=math.ceil(volume/num_transfers)
             last_vol = volume - vol_roundup*(num_transfers-1)
@@ -353,19 +352,19 @@ def run(ctx: protocol_api.ProtocolContext):
 ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
     WashBuffer1.reagent_reservoir = reagent_res.rows(
-    )[0][:WashBuffer1.num_wells] # position 1-3 colums
+    )[0][0:3] # position 1-3 colums
 
     WashBuffer2.reagent_reservoir = reagent_res.rows(
-    )[0][WashBuffer1.num_wells:WashBuffer2.num_wells] #position 3,colums 7
+    )[0][3:7] #position 3,colums 7
 
     Lysis.reagent_reservoir = reagent_res.rows(
-    )[0][WashBuffer2.num_wells:Lysis.num_wells] #position 7, colums 9
+    )[0][7:9] #position 7, colums 9
 
     Beads.reagent_reservoir = reagent_res.rows(
-    )[0][Lysis.num_wells:Beads.num_wells] #position 9, 11 columns
+    )[0][9:11] #position 9, 11 columns [Lysis.num_wells:Beads.num_wells]
 
     ElutionBuffer.reagent_reservoir = reagent_res.rows(
-    )[0][ElutionBuffer.num_wells:] #position 11
+    )[0][11:] #position 11
 
     ############################################################################
     IC.reagent_reservoir = ic_res.rows(
@@ -411,25 +410,15 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(num_cols):
             if not m20.hw_pipette['has_tip']:
                 pick_up(m20)
-
-                for j, transfer_vol in enumerate(IC_transfer_vol):
-                    # Calculate pickup_height based on remaining volume and shape of container
-                    [pickup_height, change_col] = calc_height(
-                        reagent = IC, cross_section_area = multi_well_rack_area,
-                        aspirate_volume = transfer_vol * 8, min_height=0.2, extra_volume=5)
-
-                    ctx.comment(
-                        'Aspirate from reservoir column: ' + str(IC.col))
-                    ctx.comment('Pickup height is ' + str(pickup_height))
-
-                    rinse = False
+                rinse = False
 
 
-                move_vol_multichannel(m20, reagent=IC, source=IC.reagent_reservoir,
+                move_vol_multichannel(m20, reagent=IC, source=IC.reagent_reservoir[Lysis.col],
                                       dest=work_destinations_cols[i], vol=ic_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=pickup_height, disp_height = -41,
+                                      pickup_height=1, disp_height = -41,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
+
 
 
                 m20.drop_tip(home_after=False)
@@ -452,7 +441,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
 
-        lysis_vol = [100]
+        vol_list = [100]
         rinse = False  # Only first time
 
         if (lysis_vol + air_gap_vol) > pipette_allowed_capacity: # because 200ul is the maximum volume of the tip we will choose 180
@@ -464,7 +453,7 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(num_cols):
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
-            for j, transfer_vol in enumerate(lysis_vol):
+            for j, transfer_vol in enumerate(vol_list):
                 if (i == 0 and j == 0):
                     rinse = True
                 else:
@@ -505,54 +494,39 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Used tips in total: '+ str(tip_track['counts'][m300]))
 
     ############################################################################
-    # STEP 4: TRANSFER BEADS
+    # STEP 4: ADD BEADS
     ############################################################################
+
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
-        # Transfer parameters
         start = datetime.now()
+
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
-        #beads_transfer_vol = [20]  # Two rounds of 130
 
         if (beads_vol + air_gap_vol) > pipette_allowed_capacity: # because 200ul is the maximum volume of the tip we will choose 180
         # calculate what volume should be transferred in each step
             vol_list=divide_volume(beads_vol, pipette_allowed_capacity)
 
-        rinse = True
+        ########
+        # Wash buffer dispense
         for i in range(num_cols):
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
             for j, transfer_vol in enumerate(vol_list):
-                # Calculate pickup_height based on remaining volume and shape of container
-                [pickup_height, change_col] = calc_height(
-                    reagent = Beads, cross_section_area = multi_well_rack_area,
-                    aspirate_volume = transfer_vol * 8, min_height=0.3, extra_volume=10)
-
-                if change_col == True:  # If we switch column because there is not enough volume left in current reservoir column we mix new column
-                    ctx.comment(
-                        'Mixing new reservoir column: ' + str(Beads.col))
-                    custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                               vol=70, rounds=10, blow_out=True, mix_height=1,
-                               x_offset = x_offset, post_dispense=True)
-                ctx.comment(
-                    'Aspirate from reservoir column: ' + str(Beads.col))
-                ctx.comment('Pickup height is ' + str(pickup_height))
-
-
-                if j != 0:
+                if (i == 0 and j == 0):
+                    rinse = True
+                else:
                     rinse = False
-                [pickup_height,col_change]=calc_height(Beads, multi_well_rack_area, transfer_vol*8)
-                move_vol_multichannel(m300, reagent=Beads, source=Beads.reagent_reservoir[Beads.col],
-                                      dest=work_destinations_cols[i], vol=transfer_vol,
-                                      air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=1, disp_height = -8,
-                                      rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
-
+                [pickup_height,change_col]=calc_height(Beads, multi_well_rack_area, transfer_vol*8)
+                move_vol_multichannel(m300, reagent = Beads, source = Beads.reagent_reservoir[Beads.col],
+                               dest = kf_destination[i], vol = transfer_vol,
+                               air_gap_vol = air_gap_vol, x_offset = x_offset,
+                               pickup_height = pickup_height, rinse = rinse, disp_height = -2,
+                               blow_out = True, touch_tip = False, post_airgap=True)
 
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
-
         end = datetime.now()
         time_taken = (end - start)
         ctx.comment('Step ' + str(STEP) + ': ' +
@@ -574,9 +548,6 @@ def run(ctx: protocol_api.ProtocolContext):
         # calculate what volume should be transferred in each step
             vol_list=divide_volume(wash_buffer1_vol, pipette_allowed_capacity)
 
-        #WB1 = [100]
-        rinse = False  # Only first time
-
         ########
         # Wash buffer dispense
         for i in range(num_cols):
@@ -584,7 +555,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 pick_up(m300)
             for j, transfer_vol in enumerate(vol_list):
                 if (i == 0 and j == 0):
-                    rinse = True #Rinse only first transfer
+                    rinse = True
                 else:
                     rinse = False
                 [pickup_height,col_change]=calc_height(WashBuffer1, multi_well_rack_area, transfer_vol*8)
@@ -601,6 +572,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' +
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         STEPS[STEP]['Time:'] = str(time_taken)
+
 
 
 
