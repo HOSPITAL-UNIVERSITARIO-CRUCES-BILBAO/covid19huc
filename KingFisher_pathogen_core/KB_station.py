@@ -317,7 +317,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Plate with samples
     ############################################
     kf_plate = ctx.load_labware(
-        'kf_96_wellplate_2400ul', '2', 'Deepwell plate with samples')
+        'kf_96_wellplate_2400ul', '3', 'Deepwell plate with samples')
 
     # Elution Deepwell plate
     ############################################
