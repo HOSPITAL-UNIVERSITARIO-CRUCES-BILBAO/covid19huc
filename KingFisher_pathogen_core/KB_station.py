@@ -75,7 +75,7 @@ def run(ctx: protocol_api.ProtocolContext):
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse,
                      reagent_reservoir_volume, delay, num_wells, h_cono, v_fondo,
-                      tip_recycling = 'none', rinse_loops = 2):
+                      tip_recycling = 'none', rinse_loops = 3):
 
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
@@ -118,7 +118,7 @@ def run(ctx: protocol_api.ProtocolContext):
     Lysis = Reagent(name='Lysis Buffer',
                           flow_rate_aspirate=0.75,
                           flow_rate_dispense=0.5,
-                          rinse=False,
+                          rinse=True,
                           delay=2,
                           reagent_reservoir_volume=27000,#lysis_vol*1.1*NUM_SAMPLES,
                           num_wells=3,#math.ceil((NUM_SAMPLES + 5) * lysis_vol / max_multiwell_volume),
