@@ -349,7 +349,7 @@ def run(ctx: protocol_api.ProtocolContext):
     IC.reagent_reservoir = ic_res.rows(
     )[0][:1] #position 1, column 0
 
-    Beads.reagent_reservoir = reagent_res.rows(
+    Beads.reagent_reservoir = ic_res.rows(
     )[0][5:8] #position 2, 3 columns from 5 to 7
 
     Lysis.reagent_reservoir = ic_res.rows(
