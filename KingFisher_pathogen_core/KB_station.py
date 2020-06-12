@@ -100,8 +100,8 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=wash_buffer2_vol*NUM_SAMPLES*1.1,
-                          num_wells=math.ceil((NUM_SAMPLES + 5) * wash_buffer2_vol / max_multiwell_volume),
+                          reagent_reservoir_volume=30000,#wash_buffer2_vol*NUM_SAMPLES*1.1,
+                          num_wells=3,#math.ceil((NUM_SAMPLES + 5) * wash_buffer2_vol / max_multiwell_volume),
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
@@ -110,8 +110,8 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=wash_buffer1_vol*1.1*NUM_SAMPLES,
-                          num_wells=math.ceil((NUM_SAMPLES + 5) * wash_buffer1_vol / max_multiwell_volume),
+                          reagent_reservoir_volume=45000,#wash_buffer1_vol*1.1*NUM_SAMPLES,
+                          num_wells=4,#math.ceil((NUM_SAMPLES + 5) * wash_buffer1_vol / max_multiwell_volume),
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
@@ -120,8 +120,8 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=0.5,
                           rinse=False,
                           delay=2,
-                          reagent_reservoir_volume=lysis_vol*1.1*NUM_SAMPLES,
-                          num_wells=math.ceil((NUM_SAMPLES + 5) * lysis_vol / max_multiwell_volume),
+                          reagent_reservoir_volume=27000,#lysis_vol*1.1*NUM_SAMPLES,
+                          num_wells=3,#math.ceil((NUM_SAMPLES + 5) * lysis_vol / max_multiwell_volume),
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
@@ -130,7 +130,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             flow_rate_dispense=1,
                             rinse=False,
                             delay=0,
-                            reagent_reservoir_volume=elution_buffer_vol*1.1*NUM_SAMPLES,#50*NUM_SAMPLES,
+                            reagent_reservoir_volume=9000,#elution_buffer_vol*1.1*NUM_SAMPLES,#50*NUM_SAMPLES,
                             num_wells=math.ceil((NUM_SAMPLES + 5) * elution_buffer_vol / max_multiwell_volume),
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
@@ -138,10 +138,10 @@ def run(ctx: protocol_api.ProtocolContext):
     IC = Reagent(name='Internal control',
                     flow_rate_aspirate=1,
                     flow_rate_dispense=3,
-                    rinse=True,
+                    rinse=False,
                     num_wells=1,
                     delay=2,
-                    reagent_reservoir_volume=1800,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=1600,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
@@ -149,11 +149,12 @@ def run(ctx: protocol_api.ProtocolContext):
                     flow_rate_aspirate=0.5,
                     flow_rate_dispense=0.5,
                     rinse=True,
-                    num_wells=math.ceil((NUM_SAMPLES + 5) * beads_vol / max_multiwell_volume),
+                    num_wells=3,#math.ceil((NUM_SAMPLES + 5) * beads_vol / max_multiwell_volume),
                     delay=2,
-                    reagent_reservoir_volume=beads_vol*1.15*NUM_SAMPLES,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=25500,#beads_vol*1.15*NUM_SAMPLES,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
-                    v_fondo=695)  # Prismatic
+                    v_fondo=695,
+                    rinse_loops=3)  # Prismatic
 
 
     Beads.vol_well = Beads.vol_well_original
