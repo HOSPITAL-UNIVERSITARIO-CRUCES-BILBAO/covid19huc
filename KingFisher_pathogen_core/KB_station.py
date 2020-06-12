@@ -110,7 +110,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=45000,#wash_buffer1_vol*1.1*NUM_SAMPLES,
+                          reagent_reservoir_volume=46000,#wash_buffer1_vol*1.1*NUM_SAMPLES,
                           num_wells=4,#math.ceil((NUM_SAMPLES + 5) * wash_buffer1_vol / max_multiwell_volume),
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
