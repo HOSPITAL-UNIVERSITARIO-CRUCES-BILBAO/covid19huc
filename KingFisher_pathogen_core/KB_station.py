@@ -35,10 +35,10 @@ lysis_vol = 260
 beads_vol = 260
 elution_buffer_vol = 90
 wash_buffer1_vol = 300
-wash_buffer2_vol = 300
+wash_buffer2_vol = 450
 waiting = 10 # minutes
 pipette_allowed_capacity=180
-max_multiwell_volume = 13500
+max_multiwell_volume = 13300
 
 
 run_id =  '$run_id'
@@ -57,8 +57,8 @@ def run(ctx: protocol_api.ProtocolContext):
         2: {'Execute': True, 'description': 'Add 260 ul Lysis Buffer'},
         3: {'Execute': True, 'description': 'Wait for 10 minutes', 'wait_time': 600}, # 10 minutes of waiting
         4: {'Execute': True, 'description': 'Add 260 ul Beads'},
-        5: {'Execute': True, 'description': 'Add 300 ul Wash Buffer 1 - Round 1'},
-        6: {'Execute': True, 'description': 'Add 450 ul Wash Buffer 2 - Round 1'},
+        5: {'Execute': True, 'description': 'Add 300 ul Wash Buffer 1'},
+        6: {'Execute': True, 'description': 'Add 450 ul Wash Buffer 2'},
         7: {'Execute': True, 'description': 'Add 90 ul Elution Buffer'}
         }
 
@@ -298,16 +298,16 @@ def run(ctx: protocol_api.ProtocolContext):
     # 12 well rack
     ####################################
     reagent_res = ctx.load_labware(
-        'nest_12_reservoir_15ml', '1', 'Reservoir 12 channel, column 1')
+        'nest_12_reservoir_15ml', '4', 'Reservoir 12 channel, column 1')
 
     ic_res = ctx.load_labware(
-        'nest_12_reservoir_15ml', '4', 'Reservoir 12 channel, column 1')
+        'nest_12_reservoir_15ml', '2', 'Reservoir 12 channel, column 1')
 
 
     # Wash Buffer 1 100ul Deepwell plate
     ############################################
     WashBuffer1_100ul_plate1 = ctx.load_labware(
-        'kf_96_wellplate_2400ul', '9', 'Wash Buffer 1 Deepwell plate 1')
+        'kf_96_wellplate_2400ul', '1', 'Wash Buffer 1 Deepwell plate 1')
 
     # Wash Buffer 2 100ul Deepwell plate
     ############################################
@@ -334,23 +334,25 @@ def run(ctx: protocol_api.ProtocolContext):
 
 ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
-    WashBuffer1.reagent_reservoir = reagent_res.rows(
-    )[0][:3] # position 1, 3 columns
+    # reservoir 1 (R)
+    ElutionBuffer.reagent_reservoir = reagent_res.rows(
+    )[0][:1] #position 1, 1 column 0
 
     WashBuffer2.reagent_reservoir = reagent_res.rows(
-    )[0][3:7] #position 2, 3 columns
+    )[0][4:8] #position 2, 4 columns from 4 to 7
 
-    Lysis.reagent_reservoir = reagent_res.rows(
-    )[0][7:9] #position 3, 2 columns
+    WashBuffer1.reagent_reservoir = reagent_res.rows(
+    )[0][9:] # position 3, 3 columns from 9 to 11
+
+    # reservoir 2 (IC)
+    IC.reagent_reservoir = ic_res.rows(
+    )[0][:1] #position 1, column 0
 
     Beads.reagent_reservoir = reagent_res.rows(
-    )[0][9:11] #position 4, 2 columns
+    )[0][5:8] #position 2, 3 columns from 5 to 7
 
-    ElutionBuffer.reagent_reservoir = reagent_res.rows(
-    )[0][11:] #position 5, 1 column
-
-    IC.reagent_reservoir = ic_res.rows(
-    )[0][:1] #position 1
+    Lysis.reagent_reservoir = ic_res.rows(
+    )[0][9:] #position 3, 3 columns from 9 to 11
 
     # columns in destination plates to be filled depending the number of samples
     wb1plate1_destination = WashBuffer1_100ul_plate1.rows()[0][:num_cols]
