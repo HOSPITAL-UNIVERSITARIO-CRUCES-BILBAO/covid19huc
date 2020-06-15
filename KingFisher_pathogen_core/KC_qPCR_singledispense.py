@@ -591,6 +591,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
+        tempdeck.deactivate()
 
     ############################################################################
     # STEP 3: TRANSFER Samples
