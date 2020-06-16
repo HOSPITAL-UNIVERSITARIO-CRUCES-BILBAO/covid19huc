@@ -27,7 +27,7 @@ metadata = {
 #Defined variables
 ##################
 
-NUM_SAMPLES = 96
+NUM_SAMPLES = 48
 air_gap_vol = 10
 air_gap_vol_elutionbuffer = 10
 run_id =  '$run_id'
@@ -44,9 +44,9 @@ def run(ctx: protocol_api.ProtocolContext):
     STEPS = {  # Dictionary with STEP activation, description, and times
 
         1: {'Execute': True, 'description': 'Add 100 ul Lysis Buffer'},
-        2: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1'},
-        3: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
-        4: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'}
+        2: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'},
+        3: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1'},
+        4: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'}
         }
 
     for s in STEPS:  # Create an empty wait_time
@@ -87,7 +87,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=100*NUM_SAMPLES,
+                          reagent_reservoir_volume=5500, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -97,7 +97,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=100*NUM_SAMPLES,
+                          reagent_reservoir_volume=5500, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -107,7 +107,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=0.5,
                           rinse=False,
                           delay=2,
-                          reagent_reservoir_volume=100*NUM_SAMPLES,
+                          reagent_reservoir_volume=5500, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -117,7 +117,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             flow_rate_dispense=1,
                             rinse=False,
                             delay=0,
-                            reagent_reservoir_volume=5500,#50*NUM_SAMPLES,
+                            reagent_reservoir_volume=2800,#50*NUM_SAMPLES,
                             num_wells=1,
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
@@ -143,7 +143,7 @@ def run(ctx: protocol_api.ProtocolContext):
         # Rinse before aspirating
         if rinse == True:
             custom_mix(pipet, reagent, location = source, vol = vol,
-                       rounds = 2, blow_out = True, mix_height = 0,
+                       rounds = 4, blow_out = True, mix_height = 0,
                        x_offset = x_offset)
         # SOURCE
         s = source.bottom(pickup_height).move(Point(x = x_offset[0]))
@@ -163,7 +163,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_dispense == True:
             pipet.dispense(post_dispense_vol, dest.top(z = -2))
         if touch_tip == True:
-            pipet.touch_tip(speed = 20, dest.top(z = -2), v_offset = -5, radius = 0.9)
+            pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
 
 
 
@@ -272,7 +272,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Lysis buffer 100ul Deepwell plate
     ############################################
     Lysisbuffer_100ul_plate1 = ctx.load_labware(
-        'kf_96_wellplate_2400ul', '3', 'Lysis buffer Deepwell plate 1')
+        'kf_96_wellplate_2400ul', '2', 'Lysis buffer Deepwell plate 1')
 
     # Elution Deepwell plate
     ############################################
@@ -336,16 +336,50 @@ def run(ctx: protocol_api.ProtocolContext):
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
             for j, transfer_vol in enumerate(lysis_vol):
-                '''if (i == 0 and j == 0):
-                    rinse = True
+                if (i == 0 and j == 0):
+                    rinse = True #Rinse only first transfer
                 else:
-                    rinse = False'''
+                    rinse = False
                 move_vol_multichannel(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                                dest = lysis_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 1, rinse = Lysis.rinse, disp_height = -2,
+                               pickup_height = 0.3, rinse = rinse, disp_height = -2,
                                blow_out = True, touch_tip = False, post_airgap=True)
 
+        m300.drop_tip(home_after=False)
+        tip_track['counts'][m300] += 8
+        ctx.comment('Remove Lysis buffer from plate 3')
+        ctx.delay(seconds = 8)
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+    ############################################################################
+    # STEP 2 Transfer Elution buffer
+    ############################################################################
+
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+        # Elution buffer
+        ElutionBuffer_vol = [50]
+
+        ########
+        # Water or elution buffer
+        for i in range(num_cols):
+            if not m300.hw_pipette['has_tip']:
+                pick_up(m300)
+            for transfer_vol in ElutionBuffer_vol:
+                # Calculate pickup_height based on remaining volume and shape of container
+                move_vol_multichannel(m300, reagent = ElutionBuffer, source = ElutionBuffer.reagent_reservoir[ElutionBuffer.col],
+                              dest = elutionbuffer_destination[i], vol = transfer_vol,
+                              air_gap_vol = air_gap_vol_elutionbuffer, x_offset = x_offset,
+                              pickup_height = 0.2, rinse = False, disp_height = -2,
+                              blow_out = True, touch_tip = True, post_airgap=True)
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
         end = datetime.now()
@@ -353,11 +387,10 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' +
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         STEPS[STEP]['Time:'] = str(time_taken)
-        ctx.comment('Remove Lysis buffer from plate 3')
-        ctx.delay(seconds = 8)
+
 
     ############################################################################
-    # STEP 2 Filling with WashBuffer1
+    # STEP 3 Filling with WashBuffer1
     ############################################################################
 
     STEP += 1
@@ -383,7 +416,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent = WashBuffer1, source = WashBuffer1.reagent_reservoir[WashBuffer1.col],
                                dest = wb1plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 1, rinse = rinse, disp_height = -2,
+                               pickup_height = 0.3, rinse = rinse, disp_height = -2,
                                blow_out = True, touch_tip = False, post_airgap=True)
 
         m300.drop_tip(home_after=False)
@@ -397,7 +430,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
 
     ############################################################################
-    # STEP 3 Filling with WashBuffer2
+    # STEP 4 Filling with WashBuffer2
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
@@ -422,7 +455,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent = WashBuffer2, source = WashBuffer2.reagent_reservoir[WashBuffer2.col],
                                dest = wb2plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 1, rinse = rinse, disp_height = -2,
+                               pickup_height = 0.3, rinse = rinse, disp_height = -2,
                                blow_out = True, touch_tip = False, post_airgap=True)
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
@@ -437,42 +470,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
 
 
-    ############################################################################
-    # STEP 4 Transfer Elution buffer
-    ############################################################################
 
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        start = datetime.now()
-        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
-        ctx.comment('###############################################')
-        # Elution buffer
-        ElutionBuffer_vol = [50]
-
-        ########
-        # Water or elution buffer
-        for i in range(num_cols):
-            if not m300.hw_pipette['has_tip']:
-                pick_up(m300)
-            for transfer_vol in ElutionBuffer_vol:
-                # Calculate pickup_height based on remaining volume and shape of container
-                [pickup_height, change_col] = calc_height(
-                    ElutionBuffer, multi_well_rack_area, transfer_vol * 8)
-                ctx.comment(
-                    'Aspirate from Reservoir column: ' + str(ElutionBuffer.col))
-                ctx.comment('Pickup height is ' + str(pickup_height))
-                move_vol_multichannel(m300, reagent = ElutionBuffer, source = ElutionBuffer.reagent_reservoir[ElutionBuffer.col],
-                              dest = elutionbuffer_destination[i], vol = transfer_vol,
-                              air_gap_vol = air_gap_vol_elutionbuffer, x_offset = x_offset,
-                              pickup_height = pickup_height, rinse = False, disp_height = -2,
-                              blow_out = True, touch_tip = False, post_airgap=True)
-        m300.drop_tip(home_after=False)
-        tip_track['counts'][m300] += 8
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('Step ' + str(STEP) + ': ' +
-                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
-        STEPS[STEP]['Time:'] = str(time_taken)
 
 
 

@@ -399,7 +399,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################
     # tempdeck
     tempdeck = ctx.load_module('tempdeck', '4')
-    #tempdeck.set_temperature(temperature)
+    tempdeck.set_temperature(temperature)
 
     ##################################
     # qPCR plate - final plate, goes to PCR
@@ -591,6 +591,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
+        ctx.pause('Put samples please')
+        tempdeck.deactivate()
 
     ############################################################################
     # STEP 3: TRANSFER Samples

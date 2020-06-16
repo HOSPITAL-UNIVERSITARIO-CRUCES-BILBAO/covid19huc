@@ -23,9 +23,10 @@ metadata = {
 
 #Defined variables
 ##################
-NUM_SAMPLES = 94
+NUM_SAMPLES = 48
+NUM_SAMPLES = NUM_SAMPLES - 2
 air_gap_vol = 0
-run_id = 'test'
+run_id = '43001'
 volume_sample = 50
 lysis_volume = 100
 ic_volume = 10
@@ -50,8 +51,8 @@ def run(ctx: protocol_api.ProtocolContext):
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': False, 'description': 'Add lysis buffer'},
-        2: {'Execute': False, 'description': 'Add samples (50ul)'},
-        3: {'Execute': True, 'description': 'Add internal control (10ul)'}
+        2: {'Execute': True, 'description': 'Add samples (50ul)'},
+        3: {'Execute': False, 'description': 'Add internal control (10ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -87,7 +88,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     Samples = Reagent(name = 'Samples',
                       flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
+                      flow_rate_dispense = 2,
                       rinse = False,
                       delay = 0,
                       reagent_reservoir_volume = 100 * 24,
@@ -201,7 +202,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, location.top(z = 5))
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4, extra_volume = 50):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 50):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
@@ -283,9 +284,9 @@ def run(ctx: protocol_api.ProtocolContext):
     # tips20 = [ctx.load_labware('opentrons_96_filtertiprack_20ul', slot, '20µl filter tiprack')
     # for slot in ['2', '8']]
     tips300 = [ctx.load_labware('opentrons_96_filtertiprack_200ul', slot, '200µl filter tiprack')
-                for slot in ['10', '11']]
+                for slot in ['8', '9']]
     tips20 = [ctx.load_labware('opentrons_96_filtertiprack_20ul', slot, '20µl filter tiprack')
-                for slot in ['8']]
+                for slot in ['10']]
 
     ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
@@ -355,7 +356,7 @@ def run(ctx: protocol_api.ProtocolContext):
             #custom_mix(p1000, reagent = Samples, location = s, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
             move_vol_multichannel(p300, reagent = Samples, source = s, dest = d,
             vol=volume_sample, air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 1, rinse = Samples.rinse, disp_height = -10,
+                               pickup_height = 0.4, rinse = Samples.rinse, disp_height = -10,
                                blow_out = True, touch_tip = True)
             # Mix the sample AFTER dispensing
             #custom_mix(p300, reagent = Samples, location = d, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)

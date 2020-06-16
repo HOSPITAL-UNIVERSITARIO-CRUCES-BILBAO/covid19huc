@@ -26,8 +26,8 @@ metadata = {
 
 # Defined variables
 ##################
-run_id = '$run_id'
-NUM_SAMPLES = 96
+run_id = '43001'
+NUM_SAMPLES = 48
 air_gap_vol = 20
 
 x_offset = [0,0]
@@ -66,7 +66,7 @@ def run(ctx: protocol_api.ProtocolContext):
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
-        file_path = folder_path + '/Station_KB_sample_prep_pathogen_log.txt'
+        file_path = folder_path + '/Station_KB_beads_pathogen_log.txt'
 
     # Define Reagents as objects with their properties
     class Reagent:
@@ -246,7 +246,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ##################################
     # Elution plate - final plate, goes to Kingfisher
     sample_plate = ctx.load_labware(
-        'kf_96_wellplate_2400ul', '3',
+        'kf_96_wellplate_2400ul', '6',
         'KF 96 Well 2400ul elution plate')
 
     ####################################
@@ -274,7 +274,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # Divide destination wells in small groups for P300 pipette
     #destinations = list(divide_destinations(sample_plate.wells()[:NUM_SAMPLES], size_transfer))
-    Beads.reagent_reservoir = reagent_res.rows()[0][:Beads.num_wells]  # 1 row, 4 columns (first ones)
+    Beads.reagent_reservoir = reagent_res.rows()[0][:1]  # 1 row, 4 columns (first ones)
     #pipette multiple  definition jump example play
     work_destinations_cols = sample_plate.rows()[0][:num_cols]
 
@@ -294,7 +294,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         # Mixing
         custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col], vol=70,
-                   rounds=10, blow_out=True, mix_height=6, x_offset = x_offset, post_dispense=True, source_height=0.3)
+                   rounds=10, blow_out=True, mix_height=10, x_offset = x_offset, post_dispense=True, source_height=0.3)
         ctx.comment('Finished premixing!')
         ctx.comment('Now, reagents will be transferred to deepwell plate.')
 
@@ -328,7 +328,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     ctx.comment(
                         'Mixing new reservoir column: ' + str(Beads.col))
                     custom_mix(m300, Beads, Beads.reagent_reservoir[Beads.col],
-                               vol=70, rounds=10, blow_out=True, mix_height=1,
+                               vol=120, rounds=10, blow_out=True, mix_height=1,
                                x_offset = x_offset, post_dispense=True)
                 ctx.comment(
                     'Aspirate from reservoir column: ' + str(Beads.col))

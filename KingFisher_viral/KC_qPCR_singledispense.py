@@ -15,7 +15,7 @@ metadata = {
     'author': 'Malen Aguirregabiria, Aitor Gastaminza & José Luis Villanueva (jlvillanueva@clinic.cat)',
     'source': 'Hospital Clínic Barcelona, Hospital Universitario Cruces Bilbao',
     'apiLevel': '2.2',
-    'description': 'Protocol for Kingfisher sample setup (C) - Viral Kit (ref )'
+    'description': 'Protocol for Kingfisher sample setup (C) - Pathogen Kit (ref 4462359) using CORE script'
 
 }
 '''
@@ -24,14 +24,13 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 96
-#NUM_SAMPLES = NUM_SAMPLES -1 #Remove last sample (PC), done manually
+NUM_SAMPLES = 48
 
 
 air_gap_vol = 20
 air_gap_mmix = 5
 air_gap_sample = 2
-run_id = '$run_id'
+run_id = '43001'
 
 # Tune variables
 size_transfer = 4  # Number of wells the distribute function will fill
@@ -110,7 +109,7 @@ def run(ctx: protocol_api.ProtocolContext):
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse,
                      reagent_reservoir_volume, delay, num_wells, h_cono, v_fondo,
-                      tip_recycling = 'none', rinse_loops = 2):
+                      tip_recycling = 'none'):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -125,7 +124,6 @@ def run(ctx: protocol_api.ProtocolContext):
             self.unused=[]
             self.tip_recycling = tip_recycling
             self.vol_well_original = reagent_reservoir_volume / num_wells
-            self.rinse_loops = rinse_loops
 
 
     # Reagents and their characteristics
@@ -133,7 +131,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       rinse = False,
                       flow_rate_aspirate = 1,
                       flow_rate_dispense = 1,
-                      reagent_reservoir_volume = 2000, # volume_mmix_available,
+                      reagent_reservoir_volume = 1000, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,
@@ -400,7 +398,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################
     # tempdeck
     tempdeck = ctx.load_module('tempdeck', '4')
-    #tempdeck.set_temperature(temperature)
+    tempdeck.set_temperature(temperature)
 
     ##################################
     # qPCR plate - final plate, goes to PCR
@@ -427,21 +425,6 @@ def run(ctx: protocol_api.ProtocolContext):
         for slot in ['6']
     ]
 
-    ################################################################################
-    # Declare which reagents are in each reservoir as well as deepwell and elution plate
-    MMIX.reagent_reservoir = tuberack.rows()[0][:MMIX.num_wells] # 1 row, 2 columns (first ones)
-    MMIX_components_location=tuberack.wells()[MMIX_make_location:(MMIX_make_location + len(MMIX_make[mmix_selection]))]
-    ctx.comment('Wells in: '+ str(tuberack.rows()[0][:MMIX.num_wells]) + ' element: '+str(MMIX.reagent_reservoir[MMIX.col]))
-
-    # setup up sample sources and destinations
-    samples = source_plate.wells()[:NUM_SAMPLES]
-    samples_multi = source_plate.rows()[0][:num_cols]
-    pcr_wells = qpcr_plate.wells()[:(NUM_SAMPLES)]
-    pcr_wells_multi = qpcr_plate.rows()[0][:num_cols]
-    # Divide destination wells in small groups for P300 pipette
-    dests = list(divide_destinations(pcr_wells, size_transfer))
-
-
     # pipettes
     m20 = ctx.load_instrument(
         'p20_multi_gen2', mount='left', tip_racks=tips20)
@@ -464,6 +447,22 @@ def run(ctx: protocol_api.ProtocolContext):
             'counts': {p20: 0, m20: 0},
             'maxes': {p20: len(tips200) * 96, m20: len(tips20)*96}
         }
+
+
+
+    ################################################################################
+    # Declare which reagents are in each reservoir as well as deepwell and elution plate
+    MMIX.reagent_reservoir = tuberack.rows()[0][:MMIX.num_wells] # 1 row, 2 columns (first ones)
+    MMIX_components_location=tuberack.wells()[MMIX_make_location:(MMIX_make_location + len(MMIX_make[mmix_selection]))]
+    ctx.comment('Wells in: '+ str(tuberack.rows()[0][:MMIX.num_wells]) + ' element: '+str(MMIX.reagent_reservoir[MMIX.col]))
+
+    # setup up sample sources and destinations
+    samples = source_plate.wells()[:NUM_SAMPLES]
+    samples_multi = source_plate.rows()[0][:num_cols]
+    pcr_wells = qpcr_plate.wells()[:(NUM_SAMPLES)]
+    pcr_wells_multi = qpcr_plate.rows()[0][:num_cols]
+    # Divide destination wells in small groups for P300 pipette
+    dests = list(divide_destinations(pcr_wells, size_transfer))
 
     ##########
     # pick up tip and if there is none left, prompt user for a new rack
@@ -591,9 +590,11 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
+        ctx.pause('Put samples please')
+        tempdeck.deactivate()
 
     ############################################################################
-    # STEP 4: TRANSFER Samples
+    # STEP 3: TRANSFER Samples
     ############################################################################
 
     STEP += 1
@@ -668,9 +669,10 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('20 ul Used tips in total: ' + str(tip_track['counts'][m20]))
         ctx.comment('20 ul Used racks in total: ' + str((tip_track['counts'][m20] / 96)))
 
+
     for i in range(3):
         ctx._hw_manager.hardware.set_lights(rails=False)
-        #ctx._hw_manager.hardware.set_button_light(1,0,0)
+        #ctx._hw_manager.hardware.set_lights(button=(1,0,0))
         time.sleep(0.3)
         ctx._hw_manager.hardware.set_lights(rails=True)
         #ctx._hw_manager.hardware.set_button_light(0,0,1)

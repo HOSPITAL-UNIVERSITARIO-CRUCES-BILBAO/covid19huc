@@ -26,8 +26,8 @@ metadata = {
 
 # Defined variables
 ##################
-run_id = '$run_id'
-NUM_SAMPLES = 96
+run_id = '43001'
+NUM_SAMPLES = 48
 air_gap_vol = 5
 
 x_offset = [0,0]
@@ -55,8 +55,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Mix beads'},
-        2: {'Execute': True, 'description': 'Transfer beads'},
+        1: {'Execute': True, 'description': 'Transfer IC'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -66,7 +65,7 @@ def run(ctx: protocol_api.ProtocolContext):
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
-        file_path = folder_path + '/Station_KB_sample_prep_pathogen_log.txt'
+        file_path = folder_path + '/Station_KB_IC_pathogen_log.txt'
 
     # Define Reagents as objects with their properties
     class Reagent:
@@ -246,12 +245,12 @@ def run(ctx: protocol_api.ProtocolContext):
     ##################################
     # Elution plate - final plate, goes to Kingfisher
     sample_plate = ctx.load_labware(
-        'kf_96_wellplate_2400ul', '8',
+        'kf_96_wellplate_2400ul', '6',
         'KF 96 Well 2400ul elution plate')
 
     tips20 = [
         ctx.load_labware('opentrons_96_filtertiprack_20ul', slot)
-        for slot in ['2']
+        for slot in ['4']
     ]
 
     # pipettes. P1000 currently deactivated
@@ -292,14 +291,14 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 ctx.comment(
                     'Aspirate from reservoir column: ' + str(IC.col))
-                ctx.comment('Pickup height is ' + str(pickup_height))
+                ctx.comment('Pickup height is ' + str(0.2))
 
                 rinse = False
 
                 move_vol_multichannel(m20, reagent=IC, source=IC.reagent_reservoir,
                                       dest=work_destinations_cols[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=pickup_height, disp_height = -41,
+                                      pickup_height=0.2, disp_height = -40.7,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
 
