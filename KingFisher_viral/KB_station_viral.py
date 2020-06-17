@@ -27,7 +27,7 @@ metadata = {
 #Defined variables
 ##################
 
-NUM_SAMPLES = 32
+NUM_SAMPLES = 35
 air_gap_vol = 10
 air_gap_vol_elutionbuffer = 10
 run_id =  '43002'
@@ -48,13 +48,13 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Add 100 ul Lysis Buffer and then move to station A'},
-        2: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'},
-        3: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
+        1: {'Execute': False, 'description': 'Add 100 ul Lysis Buffer and then move to station A'},
+        2: {'Execute': False, 'description': 'Add 50 ul Elution Buffer'},
+        3: {'Execute': False, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
         4: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1 and stop until plate comes from A'},
-        5: {'Execute': False, 'description': 'Transfer IC'},
-        6: {'Execute': True, 'description': 'Mix beads'},
-        7: {'Execute': True, 'description': 'Transfer beads'}
+        5: {'Execute': False, 'description': 'Transfer IC'},True
+        6: {'Execute': False, 'description': 'Mix beads'},
+        7: {'Execute': False, 'description': 'Transfer beads'}
         }
 
     for s in STEPS:  # Create an empty wait_time
@@ -97,7 +97,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=5500, #100*NUM_SAMPLES,
+                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -107,7 +107,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=5500, #100*NUM_SAMPLES,
+                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -118,7 +118,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           rinse=False,
                           rinse_loops=3,
                           delay=2,
-                          reagent_reservoir_volume=5500, #100*NUM_SAMPLES,
+                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -128,7 +128,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             flow_rate_dispense=1,
                             rinse=False,
                             delay=0,
-                            reagent_reservoir_volume=2800,#50*NUM_SAMPLES,
+                            reagent_reservoir_volume=1600,#50*NUM_SAMPLES,
                             num_wells=1,
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
@@ -150,7 +150,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse_loops=4,
                     num_wells=1,
                     delay=2,
-                    reagent_reservoir_volume=2200,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=1600,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 

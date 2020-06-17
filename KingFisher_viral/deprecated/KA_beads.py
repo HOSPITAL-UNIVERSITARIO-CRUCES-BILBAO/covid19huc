@@ -29,7 +29,7 @@ air_gap_vol = 0
 run_id = '43002'
 volume_sample = 50
 lysis_volume = 100
-ic_volume = 10
+beads_vol = 20
 x_offset = [0,0]
 
 source_type='screwcap_2ml' #'eppendorf_1.5ml' # or 'screwcap_2ml'
@@ -50,9 +50,9 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': False, 'description': 'Add lysis buffer'},
-        2: {'Execute': False, 'description': 'Add samples (50ul)'},
-        3: {'Execute': True, 'description': 'Add internal control (10ul)'}
+        1: {'Execute': False, 'description': 'Omit'},
+        2: {'Execute': False, 'description': 'Omit'},
+        3: {'Execute': True, 'description': 'Add beads (20ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -69,13 +69,16 @@ def run(ctx: protocol_api.ProtocolContext):
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse,
                      reagent_reservoir_volume, delay, num_wells, h_cono, v_fondo,
-                      tip_recycling = 'none', rinse_loops = 3):
+                      tip_recycling = 'none', rinse_loops = 3, flow_rate_dispense_mix = 2, flow_rate_aspirate_mix = 2):
+
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
+            self.flow_rate_aspirate_mix = flow_rate_aspirate_mix
+            self.flow_rate_dispense_mix = flow_rate_dispense_mix
             self.rinse = bool(rinse)
             self.reagent_reservoir_volume = reagent_reservoir_volume
-            self.delay = delay
+            self.delay = delay #Delay of reagent in dispense
             self.num_wells = num_wells
             self.col = 0
             self.vol_well = 0
@@ -108,20 +111,20 @@ def run(ctx: protocol_api.ProtocolContext):
                       v_fondo = volume_cone
                       )  # cone
 
-    IC = Reagent(name = 'Internal control',
-                      flow_rate_aspirate = 1,
-                      flow_rate_dispense = 3,
-                      rinse = False,
-                      delay = 0,
-                      reagent_reservoir_volume = 800,
-                      num_wells = 1,  # num_cols comes from available columns
-                      h_cono = h_cone,
-                      v_fondo = volume_cone
-                      )  # cone
+    Beads = Reagent(name='Magnetic beads and Lysis',
+                    flow_rate_aspirate=0.5,
+                    flow_rate_dispense=0.5,
+                    rinse=True,
+                    rinse_loops=4,
+                    num_wells=1,
+                    delay=2,
+                    reagent_reservoir_volume=800,#20 * NUM_SAMPLES * 1.1,
+                    h_cono = h_cone,
+                    v_fondo = volume_cone)  # Prismatic
 
     Samples.vol_well = Samples.vol_well_original
     LBuffer.vol_well = LBuffer.vol_well_original
-    IC.vol_well = IC.vol_well_original
+    Beads.vol_well = Beads.vol_well_original
 
     ##################
     # Custom functions
@@ -139,7 +142,7 @@ def run(ctx: protocol_api.ProtocolContext):
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
                        pickup_height, rinse, disp_height, blow_out, touch_tip,
                        post_dispense=False, post_dispense_vol=20,
-                       post_airgap=False, post_airgap_vol=10):
+                       post_airgap=True, post_airgap_vol=10):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -150,7 +153,7 @@ def run(ctx: protocol_api.ProtocolContext):
         # Rinse before aspirating
         if rinse == True:
             custom_mix(pipet, reagent, location = source, vol = vol,
-                       rounds = 2, blow_out = True, mix_height = 0,
+                       rounds = reagent.rinse_loops, blow_out = True, mix_height = 0,
                        x_offset = x_offset)
         # SOURCE
         s = source.bottom(pickup_height).move(Point(x = x_offset[0]))
@@ -165,18 +168,18 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
         if blow_out == True:
             pipet.blow_out(dest.top(z = -2))
+        if post_airgap == True:
+            pipet.dispense(post_airgap_vol, dest.top(z = -2))
         if post_dispense == True:
             pipet.dispense(post_dispense_vol, dest.top(z = -2))
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
-        if post_airgap == True:
-            pipet.aspirate(post_airgap_vol, dest.top(z = 5))
 
 
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
-    x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10,
-    post_dispense=False, post_dispense_vol=20,):
+    source_height = 3, post_airgap=True, post_airgap_vol=10,
+    post_dispense=False, post_dispense_vol=20,x_offset = x_offset):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
         blow_out: Blow out optional [True,False]
@@ -187,14 +190,14 @@ def run(ctx: protocol_api.ProtocolContext):
         if mix_height == 0:
             mix_height = 3
         pipet.aspirate(1, location=location.bottom(
-            z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate)
+            z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate_mix)
         for _ in range(rounds):
             pipet.aspirate(vol, location=location.bottom(
-                z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate)
+                z=source_height).move(Point(x=x_offset[0])), rate=reagent.flow_rate_aspirate_mix)
             pipet.dispense(vol, location=location.bottom(
-                z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
+                z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense_mix)
         pipet.dispense(1, location=location.bottom(
-            z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense)
+            z=mix_height).move(Point(x=x_offset[1])), rate=reagent.flow_rate_dispense_mix)
         if blow_out == True:
             pipet.blow_out(location.top(z=-2))  # Blow out
         if post_dispense == True:
@@ -269,10 +272,10 @@ def run(ctx: protocol_api.ProtocolContext):
     'Lysis source')
     lysis_source = lysis_source_rack.wells()[0] # lysis comes from 1 bottle
 
-    ic_source_rack = ctx.load_labware('opentrons_24_aluminumblock_generic_2ml_screwcap', '9',
+    beads_src_rack = ctx.load_labware('opentrons_24_aluminumblock_generic_2ml_screwcap', '9',
     'Internal control source')
 
-    ic_source = ic_source_rack.wells()[0] # internal control comes from 1 bottle
+    beads_src = beads_src_rack.wells()[0] # internal control comes from 1 bottle
 
     ##################################
     # Destination plate
@@ -372,8 +375,8 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 3: Add internal control
-    ############################################################################
+    # STEP 3: Add beads_vol
+    ##########################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
@@ -383,14 +386,19 @@ def run(ctx: protocol_api.ProtocolContext):
 
         # Transfer parameters
         start = datetime.now()
+        if not p20.hw_pipette['has_tip']:
+            pick_up(p20)
+        custom_mix(p20, Beads, beads_src, vol=10,
+                   rounds=10, blow_out=True, mix_height=10, post_dispense=True, source_height=0.3)
         for d in destinations:
             if not p20.hw_pipette['has_tip']:
                 pick_up(p20)
             # Mix the sample BEFORE dispensing
             #custom_mix(p1000, reagent = Samples, location = s, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
-            move_vol_multichannel(p20, reagent = IC, source = ic_source, dest = d,
-                                  vol = ic_volume, air_gap_vol = air_gap_vol, x_offset = x_offset,
-                                  pickup_height = 0.4, rinse = IC.rinse, disp_height = -40.7,
+
+            move_vol_multichannel(p20, reagent = Beads, source = beads_src, dest = d,
+                                  vol = beads_vol, air_gap_vol = 0, x_offset = x_offset,
+                                  pickup_height = 0.4, rinse = False, disp_height = -40.7,
                                   blow_out = True, touch_tip = False)
             # Mix the sample AFTER dispensing
             #custom_mix(p20, reagent = Samples, location = d, vol = 10, rounds = 2,
@@ -422,8 +430,8 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # Light flash end of program
 
-    #if not ctx.is_simulating():
-        #os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
+    if not ctx.is_simulating():
+        os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
     for i in range(3):
         ctx._hw_manager.hardware.set_lights(rails=False)
         #ctx._hw_manager.hardware.set_button_light(1,0,0)
