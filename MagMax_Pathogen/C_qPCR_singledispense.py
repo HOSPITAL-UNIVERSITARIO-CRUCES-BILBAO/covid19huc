@@ -12,10 +12,10 @@ import csv
 # metadata
 metadata = {
     'protocolName': 'Station C Kingfisher Pathogen qPCR setup Version 2',
-    'author': 'Malen Aguirregabiria, Aitor Gastaminza & José Luis Villanueva (jlvillanueva@clinic.cat)',
-    'source': 'Hospital Clínic Barcelona, Hospital Universitario Cruces Bilbao',
-    'apiLevel': '2.2',
-    'description': 'Protocol for Kingfisher sample setup (C) - Pathogen Kit (ref 4462359) using CORE script'
+    'author': 'Hiart Maortua, Aitor Gastaminza, Arkaitz Monteju & José Luis Villanueva (jlvillanueva@clinic.cat)',
+    'source': 'Hospital Universitario Cruces Bilbao. Source code template from Hospital Clinic Barcelona',
+    'apiLevel': '2.0',
+    'description': 'Protocol for qPCR preparation with Pathogen Kit (ref 4462359) using custom extraction script'
 
 }
 '''
@@ -26,10 +26,11 @@ metadata = {
 ##################
 NUM_SAMPLES = 48
 
+
 air_gap_vol = 20
 air_gap_mmix = 5
 air_gap_sample = 2
-run_id = '43002'
+run_id = '43001'
 
 # Tune variables
 size_transfer = 4  # Number of wells the distribute function will fill. Deprecated by calculation function

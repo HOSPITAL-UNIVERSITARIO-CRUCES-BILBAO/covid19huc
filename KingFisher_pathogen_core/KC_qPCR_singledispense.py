@@ -37,6 +37,8 @@ run_id = '$run_id'
 size_transfer = 4  # Number of wells the distribute function will fill
 volume_sample = 5  # Volume of the sample
 volume_mmix_available = 50*20 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
+volume_pc = 20
+volume_nc = 20
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
 diameter_screwcap = 8.25  # Diameter of the screwcap
 temperature = 8  # Temperature of temp module
@@ -89,7 +91,10 @@ def run(ctx: protocol_api.ProtocolContext):
         1: {'Execute': False, 'description': 'Make MMIX'},
         2: {'Execute': False, 'description': 'Transfer MMIX with P300'},
         3: {'Execute': True, 'description': 'Transfer MMIX with P20'},
-        4: {'Execute': True, 'description': 'Transfer elution'}
+        4: {'Execute': True, 'description': 'Transfer elution'},
+        5: {'Execute': True, 'description': 'Clean up NC and PC wells'},
+        6: {'Execute': True, 'description': 'Transfer PC'},
+        7: {'Execute': True, 'description': 'Transfer NC'}
     }
 
     if STEPS[2]['Execute']==True:
@@ -139,6 +144,28 @@ def run(ctx: protocol_api.ProtocolContext):
                       v_fondo = volume_cone  # V cono
                       )
 
+    NC = Reagent(name = 'Negative control',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000, # volume_mmix_available,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
+    PC = Reagent(name = 'Positive control',
+                      rinse = False,
+                      flow_rate_aspirate = 1,
+                      flow_rate_dispense = 1,
+                      reagent_reservoir_volume = 1000, # volume_mmix_available,
+                      num_wells = 1, #change with num samples
+                      delay = 0,
+                      h_cono = h_cone,
+                      v_fondo = volume_cone  # V cono
+                      )
+
     Elution = Reagent(name='Elution',
                       rinse=False,
                       flow_rate_aspirate = 1,
@@ -149,6 +176,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       h_cono=0,
                       v_fondo=0
                       )
+
     tackpath = Reagent(name = 'MMIX_multiplex_tackpath',
                       rinse = False,
                       flow_rate_aspirate = 1,
@@ -238,6 +266,8 @@ def run(ctx: protocol_api.ProtocolContext):
                       )
 
     MMIX.vol_well = MMIX.vol_well_original
+    PC.vol_well = PC.vol_well_original
+    NC.vol_well = NC.vol_well_original
     Elution.vol_well = Elution.vol_well_original
     tackpath.vol_well = tackpath.vol_well_original
     covid_assay.vol_well = covid_assay.vol_well_original
@@ -438,6 +468,7 @@ def run(ctx: protocol_api.ProtocolContext):
             'counts': {p300: 0, m20: 0},
             'maxes': {p300: len(tips200) * 96, m20: len(tips20)*96}
         }
+
     else:
         tips20mmix = [ ctx.load_labware('opentrons_96_filtertiprack_20ul', slot)
                         for slot in ['8'] ]
@@ -449,18 +480,21 @@ def run(ctx: protocol_api.ProtocolContext):
             'maxes': {p20: len(tips200) * 96, m20: len(tips20)*96}
         }
 
-
-
     ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
     MMIX.reagent_reservoir = tuberack.rows()[0][:MMIX.num_wells] # 1 row, 2 columns (first ones)
     MMIX_components_location=tuberack.wells()[MMIX_make_location:(MMIX_make_location + len(MMIX_make[mmix_selection]))]
     ctx.comment('Wells in: '+ str(tuberack.rows()[0][:MMIX.num_wells]) + ' element: '+str(MMIX.reagent_reservoir[MMIX.col]))
-
+    PC.reagent_reservoir = tuberack.rows()[1][:1]
+    NC.reagent_reservoir = tuberack.rows()[2][:1]
     # setup up sample sources and destinations
     samples = source_plate.wells()[:NUM_SAMPLES]
     samples_multi = source_plate.rows()[0][:num_cols]
     pcr_wells = qpcr_plate.wells()[:(NUM_SAMPLES)]
+
+    pc_well = qpcr_plate.wells()[(NUM_SAMPLES-2):(NUM_SAMPLES-1)][0]
+    nc_well = qpcr_plate.wells()[(NUM_SAMPLES-1):(NUM_SAMPLES)][0]
+
     pcr_wells_multi = qpcr_plate.rows()[0][:num_cols]
     # Divide destination wells in small groups for P300 pipette
     dests = list(divide_destinations(pcr_wells, size_transfer))
@@ -482,7 +516,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # STEP 1: Make Master MIX
     ############################################################################
-
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
@@ -533,7 +567,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # STEP 2: Transfer Master MIX with P300
     ############################################################################
-    ctx._hw_manager.hardware.set_lights(rails=True) # set lights off when using MMIX
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
@@ -564,7 +598,7 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # STEP 3: Transfer Master MIX with P20
     ############################################################################
-    ctx._hw_manager.hardware.set_lights(rails=True) # set lights off when using MMIX
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
@@ -595,9 +629,9 @@ def run(ctx: protocol_api.ProtocolContext):
         tempdeck.deactivate()
 
     ############################################################################
-    # STEP 3: TRANSFER Samples
+    # STEP 4: TRANSFER Samples
     ############################################################################
-
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
@@ -622,6 +656,86 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
 
+    ############################################################################
+    # STEP 5: Clean up PC and NC well
+    ############################################################################
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
+        clean_up_wells=[pc_well,nc_well]
+        for src in clean_up_wells:
+            p20.pick_up_tip()
+            p20.aspirate(20,src)
+            p20.drop_tip()
+            tip_track['counts'][p20]+=1
+        #MMIX.unused_two = MMIX.vol_well
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('#######################################################')
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        ctx.comment('#######################################################')
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+    ############################################################################
+    # STEP 6: Transfer PC with P20
+    ############################################################################
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
+        p20.pick_up_tip()
+
+        [pickup_height, col_change] = calc_height(PC, area_section_screwcap, volume_mmix)
+
+        move_vol_multichannel(p20, reagent = PC, source = PC.reagent_reservoir[PC.col],
+        dest = pc_well, vol = volume_pc, air_gap_vol = 0, x_offset = x_offset,
+               pickup_height = pickup_height, disp_height = -10, rinse = False,
+               blow_out=True, touch_tip=True)
+
+        p20.drop_tip()
+        tip_track['counts'][p20]+=1
+        #MMIX.unused_two = MMIX.vol_well
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('#######################################################')
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        ctx.comment('#######################################################')
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+    ############################################################################
+    # STEP 7: Transfer NC with P20
+    ############################################################################
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
+        p20.pick_up_tip()
+
+        [pickup_height, col_change] = calc_height(NC, area_section_screwcap, volume_mmix)
+
+        move_vol_multichannel(p20, reagent = NC, source = NC.reagent_reservoir[NC.col],
+        dest = nc_well, vol = volume_nc, air_gap_vol = 0, x_offset = x_offset,
+               pickup_height = pickup_height, disp_height = -10, rinse = False,
+               blow_out=True, touch_tip=True)
+
+        p20.drop_tip()
+        tip_track['counts'][p20]+=1
+        #MMIX.unused_two = MMIX.vol_well
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('#######################################################')
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        ctx.comment('#######################################################')
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+################################################################################
     # Export the time log to a tsv file
     if not ctx.is_simulating():
         with open(file_path, 'w') as f:

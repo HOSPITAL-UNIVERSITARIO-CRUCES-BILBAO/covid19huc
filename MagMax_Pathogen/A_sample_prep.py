@@ -9,11 +9,11 @@ import csv
 
 # metadata
 metadata = {
-    'protocolName': 'S2 Station A Kingfisher Version 2',
-    'author': 'Malen Aguirregabiria, Aitor Gastaminza, Arkaitz Monteju & José Luis Villanueva (jlvillanueva@clinic.cat)',
-    'source': 'Hospital Clínic Barcelona, Hospital Universitario Cruces Bilbao',
+    'protocolName': 'Station A MagMax Pathogen with custom extraction',
+    'author': 'Hiart Maortua, Aitor Gastaminza, Arkaitz Monteju & José Luis Villanueva (jlvillanueva@clinic.cat)',
+    'source': 'Hospital Universitario Cruces Bilbao. Source code template from Hospital Clinic Barcelona',
     'apiLevel': '2.0',
-    'description': 'Protocol for Kingfisher sample setup viral (A)'
+    'description': 'Protocol for sample setup Pathogen Kit (ref 4462359) using custom extraction script'
 }
 
 '''
@@ -23,16 +23,17 @@ metadata = {
 
 #Defined variables
 ##################
-NUM_SAMPLES = 48 #including PC and NC
-NUM_SAMPLES = NUM_SAMPLES - 2
+NUM_SAMPLES = 96
+NUM_SAMPLES = NUM_SAMPLES - 2 # exclude positive and negative controls!
 air_gap_vol = 0
-run_id = '43002'
-volume_sample = 50
-lysis_volume = 100
+run_id = 'test'
+volume_sample = 200
 ic_volume = 10
+
 x_offset = [0,0]
 
-source_type='screwcap_2ml' #'eppendorf_1.5ml' # or 'screwcap_2ml'
+tube_types=['Screwcap 2ml','Eppendorf 1.5ml']
+source_type=tube_types[0] #'Eppendorf 1.5ml' # or 'Screwcap 2ml'
 
 # Screwcap variables
 diameter_screwcap = 8.25  # Diameter of the screwcap
@@ -50,10 +51,11 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': False, 'description': 'Add lysis buffer'},
-        2: {'Execute': True, 'description': 'Add samples (50ul)'},
-        3: {'Execute': True, 'description': 'Add internal control (10ul)'}
+        1: {'Execute': True, 'description': 'Add samples ('+str(volume_sample)+'ul)'},
+        2: {'Execute': False, 'description': 'Add internal control one by one (10ul)'}
+        # We won't use it as we will do it in KB with the multichannel pipette
     }
+
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
             STEPS[s]['wait_time'] = 0
@@ -69,7 +71,7 @@ def run(ctx: protocol_api.ProtocolContext):
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse,
                      reagent_reservoir_volume, delay, num_wells, h_cono, v_fondo,
-                      tip_recycling = 'none', rinse_loops = 3):
+                      tip_recycling = 'none',rinse_loops = 2):
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
             self.flow_rate_dispense = flow_rate_dispense
@@ -88,22 +90,11 @@ def run(ctx: protocol_api.ProtocolContext):
 
     Samples = Reagent(name = 'Samples',
                       flow_rate_aspirate = 1,
-                      flow_rate_dispense = 2,
+                      flow_rate_dispense = 1,
                       rinse = False,
                       delay = 0,
                       reagent_reservoir_volume = 100 * 24,
                       num_wells = 24,  # num_cols comes from available columns
-                      h_cono = h_cone,
-                      v_fondo = volume_cone
-                      )  # cone
-
-    LBuffer = Reagent(name = 'Lysis buffer',
-                      flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
-                      rinse = False,
-                      delay = 0,
-                      reagent_reservoir_volume = 1000, #NUM_SAMPLES*100*1.1,
-                      num_wells = 1,  # num_cols comes from available columns
                       h_cono = h_cone,
                       v_fondo = volume_cone
                       )  # cone
@@ -120,7 +111,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       )  # cone
 
     Samples.vol_well = Samples.vol_well_original
-    LBuffer.vol_well = LBuffer.vol_well_original
+
     IC.vol_well = IC.vol_well_original
 
     ##################
@@ -202,7 +193,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, location.top(z = 5))
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 50):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.4, extra_volume = 50):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
@@ -256,18 +247,14 @@ def run(ctx: protocol_api.ProtocolContext):
     else:
         rack_num = 4
 
-    source_tube_types={'screwcap_2ml': ['opentrons_24_tuberack_generic_2ml_screwcap','source tuberack with screwcap'],
-                        'eppendorf_1.5ml': ['opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap','source tuberack with eppendorf'],
+    source_tube_types={'Screwcap 2ml': ['opentrons_24_tuberack_generic_2ml_screwcap','source tuberack with screwcap'],
+                        'Eppendorf 1.5ml': ['opentrons_24_tuberack_eppendorf_1.5ml_safelock_snapcap','source tuberack with eppendorf'],
                         }
 
     source_racks = [ctx.load_labware(
         source_tube_types[source_type][0], slot,
         source_tube_types[source_type][1] + str(i + 1)) for i, slot in enumerate(['4', '1', '6', '3'][:rack_num])
     ]
-
-    lysis_source_rack = ctx.load_labware('opentrons_24_tuberack_generic_2ml_screwcap', '7',
-    'Lysis source')
-    lysis_source = lysis_source_rack.wells()[0] # lysis comes from 1 bottle
 
     ic_source_rack = ctx.load_labware('opentrons_24_tuberack_generic_2ml_screwcap', '9',
     'Internal control source')
@@ -284,9 +271,9 @@ def run(ctx: protocol_api.ProtocolContext):
     # tips20 = [ctx.load_labware('opentrons_96_filtertiprack_20ul', slot, '20µl filter tiprack')
     # for slot in ['2', '8']]
     tips300 = [ctx.load_labware('opentrons_96_filtertiprack_200ul', slot, '200µl filter tiprack')
-                for slot in ['8', '9']]
+                for slot in ['10', '11']]
     tips20 = [ctx.load_labware('opentrons_96_filtertiprack_20ul', slot, '20µl filter tiprack')
-                for slot in ['10']]
+                for slot in ['8']]
 
     ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
@@ -298,6 +285,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     p20 = ctx.load_instrument(
         'p20_single_gen2', mount='left', tip_racks=tips20)
+
     p300 = ctx.load_instrument(
         'p300_single_gen2', mount='right', tip_racks=tips300)  # load P1000 pipette
 
@@ -308,39 +296,7 @@ def run(ctx: protocol_api.ProtocolContext):
     }
 
     ############################################################################
-    # STEP 1: Add lysis buffer
-    ############################################################################
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
-        ctx.comment('###############################################')
-
-        # Transfer parameters
-        start = datetime.now()
-        for d in destinations:
-            if not p300.hw_pipette['has_tip']:
-                pick_up(p300)
-            # Mix the sample BEFORE dispensing
-            #custom_mix(p1000, reagent = Samples, location = s, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
-            move_vol_multichannel(p300, reagent = LBuffer, source = lysis_source, dest = d,
-            vol = lysis_volume, air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 1, rinse = LBuffer.rinse, disp_height = -10,
-                               blow_out = False, touch_tip = False)
-            # Mix the sample AFTER dispensing
-            #custom_mix(p1000, reagent = Samples, location = d, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
-            # Drop tip and update counter
-            p300.drop_tip()
-            tip_track['counts'][p300] += 1
-
-        # Time statistics
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'] +
-                    ' took ' + str(time_taken))
-        STEPS[STEP]['Time:'] = str(time_taken)
-
-    ############################################################################
-    # STEP 2: Add Samples
+    # STEP 1: Add Samples
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
@@ -356,7 +312,7 @@ def run(ctx: protocol_api.ProtocolContext):
             #custom_mix(p1000, reagent = Samples, location = s, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
             move_vol_multichannel(p300, reagent = Samples, source = s, dest = d,
             vol=volume_sample, air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 0.4, rinse = Samples.rinse, disp_height = -10,
+                               pickup_height = 0.3, rinse = Samples.rinse, disp_height = -10,
                                blow_out = True, touch_tip = True)
             # Mix the sample AFTER dispensing
             #custom_mix(p300, reagent = Samples, location = d, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
@@ -372,14 +328,14 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 3: Add internal control
+    # STEP 2: Add internal control
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
 
-        #BEWARE, everything with the same tip!
+        #BEWARE, everything with the same tip, dispensed from top!
 
         # Transfer parameters
         start = datetime.now()
