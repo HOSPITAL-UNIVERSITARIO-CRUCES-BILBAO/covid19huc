@@ -7,12 +7,33 @@ import os.path
 import pandas as pd
 import string
 import math
+import re
 homedir=os.path.expanduser("~")
+from multi_well_viral import generate_multi_well
+
+# recipes for protocol types (obj. volume per well, allowable remaining nonusable volume in channel)
+viral_recipe={'Beads':[20,800],
+'Wone':[100,600],
+'Wtwo':[100,600],
+'IC':[10,900],
+'Elution':[50,600],
+'Lysis':[100,600]
+}
+
+pathogen_recipe={'Beads':[260,600],
+'Wone':[300,600],
+'Wtwo':[450,600],
+'IC':[10,900],
+'Elution':[90,600],
+'Lysis':[260,600]
+}
+
+recipes={'V': viral_recipe, 'P': pathogen_recipe}
 
 main_path = '/Users/covid19warriors/Documents/'
 code_path = main_path + 'covid19huc/Automation/base_scripts/'
-KFV_path = code_path # + 'KF_config/'
-KFP_path = code_path # + 'HC_config/'
+KFV_path = code_path + 'Viral_KF/'
+KFP_path = code_path + 'Pathogen_KF/'
 excel = main_path + 'covid19huc/Automation/base_scripts/Reference_template.xlsx'
 
 # Function to distinguish between OT and KF protocols
@@ -21,16 +42,24 @@ def select_protocol_type(p1, p2):
     while ff==False:
         protocol=input('Introducir protocolo: \nKingfisher VIRAL (V) o Kingfisher PATHOGEN (P) \nProtocolo: ')
         if protocol=='V':
-            pr=protocol
-            p=p1
+            path=p1 # path
             ff=True
         elif protocol=='P':
-            pr=protocol
-            p=p2
+            path=p2 # path
             ff=True
         else:
             print('Please, try again')
-    return pr,p
+    return protocol,path
+
+def generate_recipe(mode,cn_samp,recipes):
+    vol_max_pocillo=12400
+    final_recipe={}
+    for key in recipes[mode].keys():
+        vol_total=math.ceil((recipes[mode][key][0]*cn_samp)/100)*100
+        num_cells=math.ceil(recipes[mode][key][0]*cn_samp/vol_max_pocillo)
+        vol_pocillo=vol_total/num_cells+recipes[mode][key][1]
+        final_recipe.update({key: [vol_pocillo,num_cells]})
+    return final_recipe
 
 def rep_data(n, name, f, d):
     d=d.replace('$num_samples', str(n))
@@ -61,31 +90,35 @@ def main():
     # Get sample data from user
     control=False
     while control==False:
-        num_samples = int(input('Número de muestras a procesar (incluidos PC + NC): '))
-        if (num_samples>0 and num_samples<=96):
+        num_samples = int(input('Número de muestras a procesar (excluidos PC + NC): '))
+        if (num_samples>0 and num_samples<=94):
             control=True
         else:
-            print('Número de muestras debe ser un número entre 1 y 96')
+            print('Número de muestras debe ser un número entre 1 y 94 (2 son los controles)')
+            print('------------------------------------------------------------------------')
     print('El número de muestras registradas en el excel es: '+str(num_samples_control))
     if num_samples_control!=num_samples:
         print('Error: El número de muestras entre excel y reportado no coincide, revisar por favor.')
         exit()
     else:
         print('El número de muestras coincide')
+        print('------------------------------------------------------------------------')
 
     # Get technician name
     control=False
     while control==False:
-        tec_name = (input('Nombre del técnico (usuario): '))
+        tec_name = '\''+(input('Nombre del técnico (usuario): '))+'\''
+        print('------------------------------------------------------------------------')
         if isinstance(tec_name, str):
             control=True
         else:
-            print('Introduce tu usuario HCP, por favor')
+            print('Introduce tu usuario HUC, por favor')
 
     # Get run session ID
     control=False
     while control==False:
         id = int(input('ID run: '))
+        print('------------------------------------------------------------------------')
         if isinstance(id,int):
             control=True
         else:
@@ -93,72 +126,93 @@ def main():
 
     # Get date
     fecha=datetime.now()
-    t_registro=fecha.strftime("%m/%d/%Y, %H:%M:%S")
+    t_registro='\''+fecha.strftime("%m/%d/%Y, %H:%M:%S")+'\''
     dia_registro=fecha.strftime("%Y_%m_%d")
 
     # select the type of protocol to be run
     [protocol,protocol_path]=select_protocol_type(KFV_path, KFP_path)
+    print('------------------------------------------------------------------------')
+
+    num_samples_c = math.ceil(num_samples/8)*8 # corrected num_samples value to calculate needed volumes
+    final_data=generate_recipe(protocol,num_samples_c,recipes)
+    operation_data={'$technician': str(tec_name), '$num_samples': str(num_samples), '$date': str(t_registro) }
+
     #determine output path
     run_name = str(dia_registro)+'_OT'+str(id)+'_'+protocol
     final_path=os.path.join(main_path,run_name)
 
-    # create folder in case it doesn't already exist and copy excel registry file there
+    # create folder directory in case it doesn't already exist and copy excel registry file there
     if not os.path.isdir(final_path):
         os.mkdir(final_path)
         os.mkdir(final_path+'/scripts')
         os.mkdir(final_path+'/results')
         os.mkdir(final_path+'/logs')
         os.system('cp ' + excel +' '+ final_path+'/OT'+str(id)+'_samples.xlsx') # copy excel input file to destination
-    '''
-    if protocol=='KF':
-        file_name = 'qpcr_template_OT'+str(id)+'_'+protocol+'.txt'
-        os.system('python3 '+code_path+'thermoqpcr_generate_template.py "' + final_path + '/'+ file_name+'"')
-    '''
+        generate_multi_well(final_path)
+
+    # move protocol .py files to final destination
     for file in os.listdir(protocol_path): # look for all protocols in folder
         if file.endswith('.py'):
-            fin = open(protocol_path+file, "rt") # open file and copy protocol
-            data = fin.read()
-            fin.close()
-            final_protocol=rep_data(num_samples, tec_name, t_registro, data) #replace data
-            position=file.find('_',12) # find _ position after the name and get value
-            filename=str(dia_registro)+'_'+file[:position]+'_OT'+str(id)+'.py' # assign a filename date + station name + id
-            fout = open(os.path.join(final_path+'/scripts/',filename), "wt")
-            fout.write(final_protocol)
-            fout.close()
-    '''
-        if file.endswith('.Rmd'):
-            fin = open(protocol_path+file, "rt") # open file and copy protocol
-            data = fin.read()
-            fin.close()
-            final_protocol=data.replace('$THERUN', str(run_name))
-            filename=str(dia_registro)+'_OT'+str(id)+'.Rmd' # assign a filename date + station name + id
-            fout = open(os.path.join(final_path+'/scripts/',filename), "wt")
-            fout.write(final_protocol)
-            fout.close()
+            position=re.search('_template',file).start() # find _ position after the name and get value
+            filename=file[:position]+'_'+str(dia_registro)+'_OT'+str(id)+'.py' # assign a filename date + station name + id
+            os.system('cp ' + os.path.join(protocol_path,file) +' '+ os.path.join(final_path+'/scripts/',filename))
 
-    #Calculate needed volumes and wells in stations B and C
-    num_wells=math.ceil(num_samples / 32)
-    bead_volume=260 * 8 * math.ceil(num_samples/8) * 1.1
-    mmix_vol=(num_samples * 1.1 * 20)
-    num_wells_mmix=math.ceil(mmix_vol/2000)
+    # change values to protocols for final user
+    for filename in os.listdir(final_path+'/scripts/'):
+        if re.match('KA',filename):
+            f=open(final_path+'/scripts/'+filename, "rt") # open file
+            data = f.read()
+            print(final_data)
+            for key in final_data.keys():
+                if key in data:
+                    data=data.replace('$'+key+'_total_volume',str(final_data[key][0]))
+                    data=data.replace('$'+key+'_wells',str(final_data[key][1]))
 
-    #Print the information to a txt file
-    f = open(final_path + '/OT'+str(id)+"volumes.txt", "wt")
-    print('######### Station B ##########', file=f)
-    print('Volumen y localización de beads', file=f)
-    print('##############################', file=f)
-    print('Es necesario un volumen mínimo de beads total de '+format(round(bead_volume,2))+ ' \u03BCl', file=f)
-    print('A dividir en '+format(num_wells)+' pocillos', file=f)
-    print('Volumen mínimo por pocillo: '+ format(round(bead_volume/num_wells,2))+ ' \u03BCl', file=f)
-    print('######### Station C ##########', file=f)
-    print('Volumen y número tubos de MMIX', file=f)
-    print('###############################', file=f)
-    print('Serán necesarios '+format(round(mmix_vol,2))+' \u03BCl', file=f)
-    print('A dividir en '+format(num_wells_mmix), file=f)
-    print('Volumen mínimo por pocillo: '+ format(round(mmix_vol/num_wells_mmix,2))+ ' \u03BCl', file=f)
-    f.close()
-    print('Revisa los volúmenes y pocillos necesarios en el archivo OT'+str(id)+'volumes.txt dentro de la carpeta '+run_name)
-    '''
+            for key in operation_data.keys():
+                if key in data:
+                    data=data.replace(key,str(operation_data[key]))
+
+            #final_protocol=rep_data(num_samples, tec_name, t_registro, data) #replace data
+            f=open(os.path.join(final_path+'/scripts/',filename), "wt")
+            f.write(data)
+            f.close()
+
+        elif re.match('KB',filename):
+            f=open(final_path+'/scripts/'+filename, "rt") # open file
+            data = f.read()
+            for key in final_data.keys():
+                if key in data:
+                    data=data.replace('$'+key+'_total_volume',str(final_data[key][0]))
+                    data=data.replace('$'+key+'_wells',str(final_data[key][1]))
+
+            for key in operation_data.keys():
+                if key in data:
+                    data=data.replace(key,str(operation_data[key]))
+
+            #final_protocol=rep_data(num_samples, tec_name, t_registro, data) #replace data
+            f=open(os.path.join(final_path+'/scripts/',filename), "wt")
+            f.write(data)
+            f.close()
+
+        elif re.match('KC',filename):
+            f=open(final_path+'/scripts/'+filename, "rt") # open file
+            data = f.read()
+            for key in final_data.keys():
+                if key in data:
+                    data=data.replace('$'+key+'_total_volume',str(final_data[key][0]))
+                    data=data.replace('$'+key+'_wells',str(final_data[key][1]))
+
+            for key in operation_data.keys():
+                if key in data:
+                    data=data.replace(key,str(operation_data[key]))
+
+            #final_protocol=rep_data(num_samples, tec_name, t_registro, data) #replace data
+            f=open(os.path.join(final_path+'/scripts/',filename), "wt")
+            f.write(data)
+            f.close()
+
+        else:
+            print('No files found')
 
 if __name__ == '__main__':
     main()

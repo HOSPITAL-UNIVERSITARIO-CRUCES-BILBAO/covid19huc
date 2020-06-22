@@ -24,19 +24,21 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 35
+NUM_SAMPLES = 96
+#NUM_SAMPLES = NUM_SAMPLES -1 #Remove last sample (PC), done manually
+
 
 air_gap_vol = 20
 air_gap_mmix = 5
 air_gap_sample = 2
-run_id = '43002'
+run_id = '$run_id'
 
 # Tune variables
-size_transfer = 4  # Number of wells the distribute function will fill. Deprecated by calculation function
+size_transfer = 4  # Number of wells the distribute function will fill
 volume_sample = 5  # Volume of the sample
+volume_mmix_available = 50*20 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 volume_pc = 20
 volume_nc = 20
-volume_mmix_available = 50*20 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
 diameter_screwcap = 8.25  # Diameter of the screwcap
 temperature = 8  # Temperature of temp module
@@ -90,13 +92,13 @@ def run(ctx: protocol_api.ProtocolContext):
         2: {'Execute': False, 'description': 'Transfer MMIX with P300'},
         3: {'Execute': True, 'description': 'Transfer MMIX with P20'},
         4: {'Execute': True, 'description': 'Transfer elution'},
-        5: {'Execute': False, 'description': 'Clean up NC and PC wells'},
-        6: {'Execute': False, 'description': 'Transfer PC'},
-        7: {'Execute': False, 'description': 'Transfer NC'}
+        5: {'Execute': True, 'description': 'Clean up NC and PC wells'},
+        6: {'Execute': True, 'description': 'Transfer PC'},
+        7: {'Execute': True, 'description': 'Transfer NC'}
     }
 
     if STEPS[2]['Execute']==True:
-        STEPS[3]['Execute']=False # just to make sure if P300 is being used for the MMIX, do not load P20 single
+        STEPS[3]['Execute']=False # just to make sure it P300 is being used, do not load P20 single
 
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
@@ -135,7 +137,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       rinse = False,
                       flow_rate_aspirate = 1,
                       flow_rate_dispense = 1,
-                      reagent_reservoir_volume = 880, # volume_mmix_available,
+                      reagent_reservoir_volume = 2000, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,
@@ -174,6 +176,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       h_cono=0,
                       v_fondo=0
                       )
+
     tackpath = Reagent(name = 'MMIX_multiplex_tackpath',
                       rinse = False,
                       flow_rate_aspirate = 1,
@@ -465,6 +468,7 @@ def run(ctx: protocol_api.ProtocolContext):
             'counts': {p300: 0, m20: 0},
             'maxes': {p300: len(tips200) * 96, m20: len(tips20)*96}
         }
+
     else:
         tips20mmix = [ ctx.load_labware('opentrons_96_filtertiprack_20ul', slot)
                         for slot in ['8'] ]
@@ -475,8 +479,6 @@ def run(ctx: protocol_api.ProtocolContext):
             'counts': {p20: 0, m20: 0},
             'maxes': {p20: len(tips200) * 96, m20: len(tips20)*96}
         }
-
-
 
     ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
@@ -489,9 +491,11 @@ def run(ctx: protocol_api.ProtocolContext):
     samples = source_plate.wells()[:NUM_SAMPLES]
     samples_multi = source_plate.rows()[0][:num_cols]
     pcr_wells = qpcr_plate.wells()[:(NUM_SAMPLES)]
-    pcr_wells_multi = qpcr_plate.rows()[0][:num_cols]
+
     pc_well = qpcr_plate.wells()[(NUM_SAMPLES-2):(NUM_SAMPLES-1)][0]
     nc_well = qpcr_plate.wells()[(NUM_SAMPLES-1):(NUM_SAMPLES)][0]
+
+    pcr_wells_multi = qpcr_plate.rows()[0][:num_cols]
     # Divide destination wells in small groups for P300 pipette
     dests = list(divide_destinations(pcr_wells, size_transfer))
 
@@ -625,7 +629,7 @@ def run(ctx: protocol_api.ProtocolContext):
         tempdeck.deactivate()
 
     ############################################################################
-    # STEP 3: TRANSFER Samples
+    # STEP 4: TRANSFER Samples
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     STEP += 1
@@ -731,7 +735,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
 
-    ############################################################################
+################################################################################
     # Export the time log to a tsv file
     if not ctx.is_simulating():
         with open(file_path, 'w') as f:
