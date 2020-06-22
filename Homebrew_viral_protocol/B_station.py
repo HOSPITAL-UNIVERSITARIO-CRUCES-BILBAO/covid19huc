@@ -30,11 +30,11 @@ metadata = {
 NUM_SAMPLES = 24
 air_gap_vol = 10
 air_gap_vol_elutionbuffer = 10
-run_id =  '43002'
+run_id =  '$run_id'
 air_gap_ic = 5
 WBone_vol=100
 WBtwo_vol=100
-Elution_vol=50
+elution_vol=50
 ic_vol = 10
 beads_vol = 20
 mag_height = 6.1
@@ -54,22 +54,17 @@ def run(ctx: protocol_api.ProtocolContext):
         2: {'Execute': True, 'description': 'Add IC to the plate coming from station A'},
         3: {'Execute': True, 'description': 'Mix beads'},
         4: {'Execute': True, 'description': 'Transfer beads and mix (dispose tip)'},
-
         5: {'Execute': True, 'description': 'Wait with magnet OFF after beads', 'wait_time': 120},  # 60
         6: {'Execute': True, 'description': 'Wait with magnet ON after beads', 'wait_time': 900},  # 900
-
         7: {'Execute': True, 'description': 'Remove supernatant'},
         8: {'Execute': True, 'description': 'Add W1 and mix (magnet OFF)'},
         9: {'Execute': True, 'description': 'Wait with magnet ON', 'wait_time': 900},  # 900
-
         10: {'Execute': True, 'description': 'Remove W1'},
         11: {'Execute': True, 'description': 'Add W2 and mix (magnet OFF)'},
         12: {'Execute': True, 'description': 'Wait with magnet ON', 'wait_time': 900},  # 900
-
         13: {'Execute': True, 'description': 'Remove supernatant'},
         14: {'Execute': True, 'description': 'Allow to dry (magnet ON)', 'wait_time': 300},
         15: {'Execute': True, 'description': 'Add 50 ul Elution Buffer (magnet OFF) and mix'},
-
         16: {'Execute': True, 'description': 'Wait with magnet OFF after water', 'wait_time': 60},  # 60
         17: {'Execute': True, 'description': 'Wait with magnet ON after water', 'wait_time': 120},  # 300
         18: {'Execute': True, 'description': 'Transfer to final elution plate'}
@@ -89,7 +84,7 @@ def run(ctx: protocol_api.ProtocolContext):
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse,
                      reagent_reservoir_volume, delay, num_wells, h_cono, v_fondo,
-                      tip_recycling = 'none', rinse_loops = 3, flow_rate_dispense_mix = 2, flow_rate_aspirate_mix = 2):
+                      tip_recycling = 'none', rinse_loops = 3, flow_rate_dispense_mix = 3, flow_rate_aspirate_mix = 3):
 
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
@@ -202,7 +197,7 @@ def run(ctx: protocol_api.ProtocolContext):
                        post_dispense=False, post_dispense_vol=20,
                        post_airgap=True, post_airgap_vol=10):
         '''
-        x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
+        x_offset: list with two values. x_offset in source [0] and x_offset in destination [1] i.e. [-1,1]
         pickup_height: height from bottom where volume
         rinse: if True it will do 2 rounds of aspirate and dispense before the tranfer
         disp_height: dispense height; by default it's close to the top (z=-2), but in case it is needed it can be lowered
@@ -314,7 +309,6 @@ def run(ctx: protocol_api.ProtocolContext):
             side = 1
         return side
 
-
 ####################################
     # load labware and modules
 
@@ -425,7 +419,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse = False
                 move_vol_multichannel(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                                dest = sample_plate[i], vol = transfer_vol,
-                               air_gap_vol = air_gap_vol, x_offset = [0,0],
+                               air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 0.3, rinse = rinse, disp_height = -2,
                                blow_out = True, touch_tip = False, post_airgap=True)
 
@@ -457,7 +451,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m20, reagent=IC, source=IC.reagent_reservoir[IC.col],
                                       dest=sample_plate[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_ic, x_offset=x_offset,
-                                      pickup_height=0.2, disp_height = -38,
+                                      pickup_height=0.2, disp_height = -37.7,
                                       rinse=False, blow_out = True, touch_tip=False, post_airgap=True)
 
                 m20.drop_tip(home_after=False)
@@ -506,7 +500,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
-        beads_transfer_vol = [beads_vol]  # Two rounds of 130
+        beads_transfer_vol = [beads_vol]  # One round of 20
         rinse = True
         for i in range(num_cols):
             if not m300.hw_pipette['has_tip']:
@@ -536,8 +530,8 @@ def run(ctx: protocol_api.ProtocolContext):
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 custom_mix(m300, Beads, sample_plate[i] ,
-                                   vol=70, rounds=10, blow_out=True, mix_height=8,
-                                   x_offset = x_offset, source_height=0.5, post_dispense=True)
+                                   vol=120, rounds=10, blow_out=True, mix_height=15,
+                                   x_offset = x_offset, source_height=0.8, post_dispense=True)
                 m300.return_tip(tips300b[0].rows()[0][i])
 
         end = datetime.now()
@@ -599,7 +593,7 @@ def run(ctx: protocol_api.ProtocolContext):
         supernatant_vol = [180]
 
         for i in range(num_cols):
-            x_offset = find_side(i) * x_offset_rs
+            offset = find_side(i) * x_offset_rs
             #if not m300.hw_pipette['has_tip']:
             m300.pick_up_tip(tips300b[0].rows()[0][i])
             for transfer_vol in supernatant_vol:
@@ -610,8 +604,8 @@ def run(ctx: protocol_api.ProtocolContext):
                             str(pickup_height) + ' (fixed)')
                 move_vol_multichannel(m300, reagent=Beads, source=sample_plate[i],
                                dest=waste, vol=transfer_vol, air_gap_vol=air_gap_vol,
-                               x_offset=[x_offset,0], pickup_height=pickup_height, rinse=False,
-                               disp_height=-2, blow_out=True, touch_tip=True)
+                               x_offset=[offset,0], pickup_height=pickup_height, rinse=False,
+                               disp_height=-2, blow_out=True, touch_tip=False, post_dispense=True)
 
             m300.drop_tip(home_after=True)
             tip_track['counts'][m300] += 8
@@ -634,13 +628,13 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
 
         wash1_vol = [100]
-        x_offset = 0
         rinse = WashBuffer1.rinse  # Only first time
 
         ########
-        # isoprop washes
+        # W1 isoprop washes
         for i in range(num_cols):
             #if not m300.hw_pipette['has_tip']:
+            offset = find_side(i) * - 2 # dispense and mix just over the bead pellet
             m300.pick_up_tip(tips300w1[0].rows()[0][i])
             for j, transfer_vol in enumerate(wash1_vol):
                 # Calculate pickup_height based on remaining volume and shape of container
@@ -652,14 +646,14 @@ def run(ctx: protocol_api.ProtocolContext):
                 if i != 0 and j!= 0:
                     rinse = False
                 move_vol_multichannel(m300, reagent=WashBuffer1, source=WashBuffer1.reagent_reservoir[WashBuffer1.col],
-                               dest=sample_plate[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[0,x_offset],
+                               dest=sample_plate[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[0,offset],
                                pickup_height=pickup_height, rinse=rinse,
-                               disp_height=-2, blow_out=True, touch_tip=False)
+                               disp_height=-4, blow_out=True, touch_tip=False)
 
                 #m300.drop_tip(home_after=True)
-                m300.touch_tip(speed = 20, v_offset = -5)
+                #m300.touch_tip(speed = 20, v_offset = -5)
             custom_mix(m300, reagent=WashBuffer1, location=sample_plate[i], vol=transfer_vol,
-                       rounds=2, blow_out=True, mix_height=1, x_offset=[0,1])
+                       rounds=2, blow_out=True, mix_height=15, x_offset=[0,offset])
             m300.touch_tip(speed = 20, v_offset = -5)
             m300.return_tip(tips300w1[0].rows()[0][i])
 
@@ -705,7 +699,7 @@ def run(ctx: protocol_api.ProtocolContext):
         supernatant_vol = [120]
 
         for i in range(num_cols):
-            x_offset = find_side(i) * x_offset_rs
+            offset = find_side(i) * x_offset_rs
             #if not m300.hw_pipette['has_tip']:
             m300.pick_up_tip(tips300w1[0].rows()[0][i])
             for transfer_vol in supernatant_vol:
@@ -716,7 +710,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             str(pickup_height) + ' (fixed)')
                 move_vol_multichannel(m300, reagent=WashBuffer1, source=sample_plate[i],
                                dest=waste, vol=transfer_vol, air_gap_vol=air_gap_vol,
-                               x_offset=[x_offset,0], pickup_height=pickup_height, rinse=False,
+                               x_offset=[offset,0], pickup_height=pickup_height, rinse=False,
                                disp_height=-2, blow_out=True, touch_tip=True)
 
             m300.drop_tip(home_after=True)
@@ -740,7 +734,6 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('###############################################')
 
         wash2_vol = [100]
-        x_offset = 0
         rinse = WashBuffer2.rinse  # Only first time
 
         ########
@@ -748,6 +741,7 @@ def run(ctx: protocol_api.ProtocolContext):
         for i in range(num_cols):
             #if not m300.hw_pipette['has_tip']:
             m300.pick_up_tip(tips300w2[0].rows()[0][i])
+            offset = find_side(i) * - 2 # dispense and mix just over the bead pellet
             for j, transfer_vol in enumerate(wash2_vol):
                 # Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(
@@ -758,14 +752,14 @@ def run(ctx: protocol_api.ProtocolContext):
                 if i != 0 and j!= 0:
                     rinse = False
                 move_vol_multichannel(m300, reagent=WashBuffer2, source=WashBuffer2.reagent_reservoir[WashBuffer2.col],
-                               dest=sample_plate[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[0,x_offset],
+                               dest=sample_plate[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[0,offset],
                                pickup_height=pickup_height, rinse=rinse,
-                               disp_height=-2, blow_out=True, touch_tip=False)
+                               disp_height=-4, blow_out=True, touch_tip=False)
 
                 #m300.drop_tip(home_after=True)
                 m300.touch_tip(speed = 20, v_offset = -5)
             custom_mix(m300, reagent=WashBuffer2, location=sample_plate[i], vol=transfer_vol,
-                       rounds=2, blow_out=True, mix_height=1, x_offset=[0,1])
+                       rounds=2, blow_out=True, mix_height=15, x_offset=[0,offset])
             m300.touch_tip(speed = 20, v_offset = -5)
             m300.return_tip(tips300w2[0].rows()[0][i])
 
@@ -811,7 +805,7 @@ def run(ctx: protocol_api.ProtocolContext):
         supernatant_vol = [120]
 
         for i in range(num_cols):
-            x_offset = find_side(i) * x_offset_rs
+            offset = find_side(i) * x_offset_rs
             #if not m300.hw_pipette['has_tip']:
             m300.pick_up_tip(tips300w2[0].rows()[0][i])
             for transfer_vol in supernatant_vol:
@@ -822,7 +816,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             str(pickup_height) + ' (fixed)')
                 move_vol_multichannel(m300, reagent=WashBuffer2, source=sample_plate[i],
                                dest=waste, vol=transfer_vol, air_gap_vol=air_gap_vol,
-                               x_offset=[x_offset,0], pickup_height=pickup_height, rinse=False,
+                               x_offset=[offset,0], pickup_height=pickup_height, rinse=False,
                                disp_height=-2, blow_out=True, touch_tip=True)
 
             m300.drop_tip(home_after=True)
@@ -862,15 +856,15 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
         # Water elution
-        elut_vol = [50]
+        elut_vol = [elution_vol]
         air_gap_vol_water = 10
         x_offset_w = -1.1
         magdeck.disengage()
         ########
         # Water or elution buffer
         for i in range(num_cols):
-            x_offset = find_side(i)*x_offset_w
-            ctx.comment('Side is : '+ str(x_offset))
+            offset = find_side(i)*x_offset_w
+            ctx.comment('Side is : '+ str(offset))
             #if not m300.hw_pipette['has_tip']:
             pick_up(m300)
             for transfer_vol in elut_vol:
@@ -880,14 +874,14 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Aspirate from Reservoir column: ' + str(ElutionBuffer.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 move_vol_multichannel(m300, reagent=ElutionBuffer, source=ElutionBuffer.reagent_reservoir[ElutionBuffer.col],
-                               dest=sample_plate[i], vol=transfer_vol, air_gap_vol=air_gap_vol_water, x_offset=[0,x_offset],
-                               pickup_height=pickup_height, rinse=False, disp_height=-18,
+                               dest=sample_plate[i], vol=transfer_vol, air_gap_vol=air_gap_vol_water, x_offset=[0,offset],
+                               pickup_height=pickup_height, rinse=False, disp_height=-25,
                                blow_out=True, touch_tip=False)
 
             ctx.comment('Mixing sample with Water and LTA')
             # Mixing
-            custom_mix(m300, ElutionBuffer, sample_plate[i], vol=40, rounds=20,
-                       blow_out=True, mix_height=5,x_offset=[0,x_offset],source_height=0.6)
+            custom_mix(m300, ElutionBuffer, sample_plate[i], vol=60, rounds=10,
+                       blow_out=True, mix_height=155,x_offset=[0,offset],source_height=0.4)
             m300.drop_tip(home_after=True)
             tip_track['counts'][m300] += 8
         end = datetime.now()
@@ -945,21 +939,23 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
 
-        elution_vol = [50]
+        elut_vol_corrected = [x+20 for x in elut_vol] # take 20µl more than needed elution volume
+        air_gap_vol_water = 0 # as we will take more volume than wanted an air_gap will be already generated
+
         for i in range(num_cols):
-            x_offset = find_side(i) * x_offset_rs
+            offset = find_side(i) * x_offset_rs
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
-            for transfer_vol in elution_vol:
+            for transfer_vol in elut_vol_corrected:
                 # Pickup_height is fixed here
                 pickup_height = 0.2
                 ctx.comment('Aspirate from deep well column: ' + str(i + 1))
                 ctx.comment('Pickup height is ' +
                             str(pickup_height) + ' (fixed)')
                 move_vol_multichannel(m300, reagent=Elution, source=sample_plate[i],
-                               dest=qpcr_plate_dest[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[0,0],
+                               dest=qpcr_plate_dest[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[offset,1],
                                pickup_height=pickup_height, rinse=False,
-                               disp_height=-3, blow_out=True, touch_tip=False)
+                               disp_height=-4, blow_out=True, touch_tip=False)
 
             m300.drop_tip(home_after=True)
             tip_track['counts'][m300] += 8
