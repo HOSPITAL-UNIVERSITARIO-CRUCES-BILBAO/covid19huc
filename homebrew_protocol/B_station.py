@@ -37,7 +37,7 @@ WBtwo_vol=100
 Elution_vol=50
 ic_vol = 10
 beads_vol = 20
-mag_height = 14
+mag_height = 6.1
 
 x_offset_rs = 1 #Offset of the pickup when magnet is ON
 multi_well_rack_area = 8.2 * 71.2  # Cross section of the 12 well reservoir
@@ -168,7 +168,7 @@ def run(ctx: protocol_api.ProtocolContext):
     IC = Reagent(name='Magnetic beads and Lysis',
                     flow_rate_aspirate=1,
                     flow_rate_dispense=3,
-                    rinse=True,
+                    rinse=False,
                     num_wells=1,
                     delay=2,
                     reagent_reservoir_volume=1050,#20 * NUM_SAMPLES * 1.1,
@@ -327,13 +327,13 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################
     magdeck = ctx.load_module('magdeck', '6')
     deepwell = magdeck.load_labware(
-        'kf_96_wellplate_2400ul', 'Deepwell plate')
+        'nest_96_wellplate_2000ul', 'Deepwell plate')
 
 
     # Waste plates
     ############################################
     waste_reservoir = ctx.load_labware(
-        'nalgene_1_reservoir_300000ul', '9', 'waste reservoir')
+        'nest_1_reservoir_195ml', '9', 'waste reservoir')
     waste = waste_reservoir.wells()[0]  # referenced as reservoir
 
     # Elution Deepwell plate
@@ -450,7 +450,6 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
         IC_transfer_vol = [ic_vol]
-        rinse = True
         for i in range(num_cols):
             if not m20.hw_pipette['has_tip']:
                 pick_up(m20)
@@ -458,8 +457,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m20, reagent=IC, source=IC.reagent_reservoir[IC.col],
                                       dest=sample_plate[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_ic, x_offset=x_offset,
-                                      pickup_height=0.2, disp_height = -40.7,
-                                      rinse=IC.rinse, blow_out = True, touch_tip=False, post_airgap=True)
+                                      pickup_height=0.2, disp_height = -38,
+                                      rinse=False, blow_out = True, touch_tip=False, post_airgap=True)
 
                 m20.drop_tip(home_after=False)
                 tip_track['counts'][m20] += 8
