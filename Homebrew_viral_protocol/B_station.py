@@ -54,8 +54,8 @@ def run(ctx: protocol_api.ProtocolContext):
         2: {'Execute': True, 'description': 'Add IC to the plate coming from station A'},
         3: {'Execute': True, 'description': 'Mix beads'},
         4: {'Execute': True, 'description': 'Transfer beads and mix (dispose tip)'},
-        5: {'Execute': True, 'description': 'Wait with magnet OFF after beads', 'wait_time': 120},  # 60
-        6: {'Execute': True, 'description': 'Wait with magnet ON after beads', 'wait_time': 900},  # 900
+        5: {'Execute': True, 'description': 'Wait with magnet OFF after beads', 'wait_time': 10},  # 60
+        6: {'Execute': True, 'description': 'Wait with magnet ON after beads', 'wait_time': 10},  # 900
         7: {'Execute': True, 'description': 'Remove supernatant'},
         8: {'Execute': True, 'description': 'Add W1 and mix (magnet OFF)'},
         9: {'Execute': True, 'description': 'Wait with magnet ON', 'wait_time': 900},  # 900
@@ -138,7 +138,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695,
-                          tip_recycling = ['1'])  # Flat surface
+                          tip_recycling = ['2'])  # Flat surface
 
     ElutionBuffer = Reagent(name='Elution Buffer',
                             flow_rate_aspirate=1,
@@ -173,6 +173,8 @@ def run(ctx: protocol_api.ProtocolContext):
     Beads = Reagent(name='Magnetic beads and Lysis',
                     flow_rate_aspirate=0.5,
                     flow_rate_dispense=0.5,
+                    flow_rate_aspirate_mix=4,
+                    flow_rate_dispense_mix=6,
                     rinse=True,
                     rinse_loops=4,
                     num_wells=1,
@@ -180,7 +182,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     reagent_reservoir_volume=1600,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695,
-                    tip_recycling = ['1'])  # Prismatic
+                    tip_recycling = ['2'])  # Prismatic
 
 
     Beads.vol_well = Beads.vol_well_original
@@ -352,7 +354,7 @@ def run(ctx: protocol_api.ProtocolContext):
                for slot in WashBuffer2.tip_recycling]
 
     tips20 = [ctx.load_labware('opentrons_96_filtertiprack_20ul', slot, '20µl filter tiprack')
-               for slot in ['2']]
+               for slot in ['1']]
 
 ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
@@ -589,6 +591,9 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
         ctx.comment('###############################################')
 
+        '''if (wash_buffer2_vol + air_gap_vol) > pipette_allowed_capacity: # because 200ul is the maximum volume of the tip we will choose 180
+        # calculate what volume should be transferred in each step
+            vol_list=divide_volume(wash_buffer2_vol, pipette_allowed_capacity)'''
         # remove supernatant -> height calculation can be omitted and referred to bottom!
         supernatant_vol = [180]
 
