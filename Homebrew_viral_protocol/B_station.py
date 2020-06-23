@@ -50,18 +50,18 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Add 100 ul Lysis Buffer and then move to station A'},
-        2: {'Execute': True, 'description': 'Add IC to the plate coming from station A'},
-        3: {'Execute': True, 'description': 'Mix beads'},
-        4: {'Execute': True, 'description': 'Transfer beads and mix (dispose tip)'},
-        5: {'Execute': True, 'description': 'Wait with magnet OFF after beads', 'wait_time': 10},  # 60
-        6: {'Execute': True, 'description': 'Wait with magnet ON after beads', 'wait_time': 10},  # 900
-        7: {'Execute': True, 'description': 'Remove supernatant'},
-        8: {'Execute': True, 'description': 'Add W1 and mix (magnet OFF)'},
-        9: {'Execute': True, 'description': 'Wait with magnet ON', 'wait_time': 900},  # 900
+        1: {'Execute': False, 'description': 'Add 100 ul Lysis Buffer and then move to station A'},
+        2: {'Execute': False, 'description': 'Add IC to the plate coming from station A'},
+        3: {'Execute': False, 'description': 'Mix beads'},
+        4: {'Execute': False, 'description': 'Transfer beads and mix (dispose tip)'},
+        5: {'Execute': False, 'description': 'Wait with magnet OFF after beads', 'wait_time': 10},  # 60
+        6: {'Execute': False, 'description': 'Wait with magnet ON after beads', 'wait_time': 10},  # 900
+        7: {'Execute': False, 'description': 'Remove supernatant'},
+        8: {'Execute': False, 'description': 'Add W1 and mix (magnet OFF)'},
+        9: {'Execute': False, 'description': 'Wait with magnet ON', 'wait_time': 10},  # 900
         10: {'Execute': True, 'description': 'Remove W1'},
         11: {'Execute': True, 'description': 'Add W2 and mix (magnet OFF)'},
-        12: {'Execute': True, 'description': 'Wait with magnet ON', 'wait_time': 900},  # 900
+        12: {'Execute': True, 'description': 'Wait with magnet ON', 'wait_time': 10},  # 900
         13: {'Execute': True, 'description': 'Remove supernatant'},
         14: {'Execute': True, 'description': 'Allow to dry (magnet ON)', 'wait_time': 300},
         15: {'Execute': True, 'description': 'Add 50 ul Elution Buffer (magnet OFF) and mix'},
@@ -508,10 +508,10 @@ def run(ctx: protocol_api.ProtocolContext):
             if not m300.hw_pipette['has_tip']:
                 m300.pick_up_tip(tips300b[0].rows()[0][i])
             for j, transfer_vol in enumerate(beads_transfer_vol):
-                if (i == 0 and j == 0):
+                '''if (i == 0 and j == 0):
                     rinse = True
                 else:
-                    rinse = False
+                    rinse = False'''
                 # Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(
                     reagent = Beads, cross_section_area = multi_well_rack_area,
@@ -529,7 +529,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                       dest=sample_plate[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
                                       pickup_height=pickup_height, disp_height = -8,
-                                      rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
+                                      rinse=Beads.rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 custom_mix(m300, Beads, sample_plate[i] ,
                                    vol=120, rounds=10, blow_out=True, mix_height=15,
@@ -658,7 +658,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #m300.drop_tip(home_after=True)
                 #m300.touch_tip(speed = 20, v_offset = -5)
             custom_mix(m300, reagent=WashBuffer1, location=sample_plate[i], vol=transfer_vol,
-                       rounds=2, blow_out=True, mix_height=15, x_offset=[0,offset])
+                       rounds=10, blow_out=True, mix_height=15, x_offset=[0,offset])
             m300.touch_tip(speed = 20, v_offset = -5)
             m300.return_tip(tips300w1[0].rows()[0][i])
 
@@ -764,7 +764,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #m300.drop_tip(home_after=True)
                 m300.touch_tip(speed = 20, v_offset = -5)
             custom_mix(m300, reagent=WashBuffer2, location=sample_plate[i], vol=transfer_vol,
-                       rounds=2, blow_out=True, mix_height=15, x_offset=[0,offset])
+                       rounds=10, blow_out=True, mix_height=15, x_offset=[0,offset])
             m300.touch_tip(speed = 20, v_offset = -5)
             m300.return_tip(tips300w2[0].rows()[0][i])
 
