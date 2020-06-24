@@ -17,16 +17,16 @@ metadata = {
 }
 
 '''
-'technician': '$technician',
-'date': '$date'
+'technician': $technician
+'date': $date
 '''
 
 #Defined variables
 ##################
-NUM_SAMPLES = 35 #including PC and NC
+NUM_SAMPLES = $num_samples #including PC and NC
 NUM_SAMPLES = NUM_SAMPLES - 2
 air_gap_vol = 0
-run_id = '43002'
+run_id = $run_id
 volume_sample = 50
 lysis_volume = 100
 ic_volume = 10
@@ -102,8 +102,8 @@ def run(ctx: protocol_api.ProtocolContext):
                       flow_rate_dispense = 1,
                       rinse = False,
                       delay = 0,
-                      reagent_reservoir_volume = 1000, #NUM_SAMPLES*100*1.1,
-                      num_wells = 1,  # num_cols comes from available columns
+                      reagent_reservoir_volume = $Lysis_total_volume, #NUM_SAMPLES*100*1.1,
+                      num_wells = $Lysis_wells,  # num_cols comes from available columns
                       h_cono = h_cone,
                       v_fondo = volume_cone
                       )  # cone
@@ -113,8 +113,8 @@ def run(ctx: protocol_api.ProtocolContext):
                       flow_rate_dispense = 3,
                       rinse = False,
                       delay = 0,
-                      reagent_reservoir_volume = 800,
-                      num_wells = 1,  # num_cols comes from available columns
+                      reagent_reservoir_volume = $IC_total_volume,
+                      num_wells = $IC_wells,  # num_cols comes from available columns
                       h_cono = h_cone,
                       v_fondo = volume_cone
                       )  # cone

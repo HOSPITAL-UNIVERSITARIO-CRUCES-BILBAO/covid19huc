@@ -484,7 +484,7 @@ def run(ctx: protocol_api.ProtocolContext):
                    rounds=10, blow_out=True, mix_height=10, post_dispense=True, source_height=0.3)
         ctx.comment('Finished premixing!')
         ctx.comment('Now, reagents will be transferred to deepwell plate.')
-        m300.return_tip()
+        #m300.return_tip()
 
         end = datetime.now()
         time_taken = (end - start)
@@ -532,8 +532,8 @@ def run(ctx: protocol_api.ProtocolContext):
                                       rinse=Beads.rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 custom_mix(m300, Beads, sample_plate[i] ,
-                                   vol=120, rounds=10, blow_out=True, mix_height=15,
-                                   x_offset = x_offset, source_height=0.8, post_dispense=True)
+                                   vol=80, rounds=10, blow_out=True, mix_height=15,
+                                   x_offset = x_offset, source_height=0.5, post_dispense=True)
                 m300.return_tip(tips300b[0].rows()[0][i])
 
         end = datetime.now()
@@ -658,7 +658,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 #m300.drop_tip(home_after=True)
                 #m300.touch_tip(speed = 20, v_offset = -5)
             custom_mix(m300, reagent=WashBuffer1, location=sample_plate[i], vol=transfer_vol,
-                       rounds=10, blow_out=True, mix_height=15, x_offset=[0,offset])
+                       rounds=10, blow_out=True, mix_height=15, x_offset=[0,offset], source_height=0.5)
             m300.touch_tip(speed = 20, v_offset = -5)
             m300.return_tip(tips300w1[0].rows()[0][i])
 
@@ -763,8 +763,8 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 #m300.drop_tip(home_after=True)
                 m300.touch_tip(speed = 20, v_offset = -5)
-            custom_mix(m300, reagent=WashBuffer2, location=sample_plate[i], vol=transfer_vol,
-                       rounds=10, blow_out=True, mix_height=15, x_offset=[0,offset])
+            custom_mix(m300, reagent=WashBuffer2, location=sample_plate[i], vol=150,
+                       rounds=10, blow_out=True, mix_height=15, x_offset=[0,offset], source_height=0.5)
             m300.touch_tip(speed = 20, v_offset = -5)
             m300.return_tip(tips300w2[0].rows()[0][i])
 
@@ -863,7 +863,7 @@ def run(ctx: protocol_api.ProtocolContext):
         # Water elution
         elut_vol = [elution_vol]
         air_gap_vol_water = 10
-        x_offset_w = -1.1
+        x_offset_w = -2
         magdeck.disengage()
         ########
         # Water or elution buffer
@@ -948,7 +948,8 @@ def run(ctx: protocol_api.ProtocolContext):
         air_gap_vol_water = 0 # as we will take more volume than wanted an air_gap will be already generated
 
         for i in range(num_cols):
-            offset = find_side(i) * x_offset_rs
+            #offset = find_side(i) * x_offset_rs
+            offset = 0
             if not m300.hw_pipette['has_tip']:
                 pick_up(m300)
             for transfer_vol in elut_vol_corrected:
@@ -958,7 +959,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' +
                             str(pickup_height) + ' (fixed)')
                 move_vol_multichannel(m300, reagent=Elution, source=sample_plate[i],
-                               dest=qpcr_plate_dest[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[offset,1],
+                               dest=qpcr_plate_dest[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[offset,0],
                                pickup_height=pickup_height, rinse=False,
                                disp_height=-4, blow_out=True, touch_tip=False)
 

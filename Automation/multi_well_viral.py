@@ -1,7 +1,7 @@
 
-def generate_multi_well(path):
-    import os
+def generate_multi_well_viral(path,recipe):
     import matplotlib.pyplot as plt
+    import math
     plt.rcParams.update({'font.size': 16})
     #plt.rcParams.update({'font.family': 'Computer Modern Sans Serif'})
     color_one='yellowgreen'
@@ -14,7 +14,7 @@ def generate_multi_well(path):
     toplabels.extend(['' for i in range(3,9)])
     toplabels.extend(['E','IC','B'])
 
-    bar_label=[1000,0,0,0,2000,0,0,0,0,1000,0,0]
+    bar_label=[recipe['Wone'][0],recipe['Wtwo'][0],recipe['Lysis'][0],0,0,0,0,0,0,recipe['Elution'][0],recipe['IC'][0],recipe['Beads'][0]]
     bar_label = [str(i)+'µl' for i in bar_label]
 
     colors=[color_one, color_two,color_one]

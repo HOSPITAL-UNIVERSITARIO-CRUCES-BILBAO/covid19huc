@@ -9,9 +9,13 @@ import string
 import math
 import re
 homedir=os.path.expanduser("~")
-from multi_well_viral import generate_multi_well
+from multi_well_viral import generate_multi_well_viral
+from multi_well_pathogen_IC import generate_multi_well_pathogen_IC
+from multi_well_pathogen_R import generate_multi_well_pathogen_R
 
-# recipes for protocol types (obj. volume per well, allowable remaining nonusable volume in channel)
+demo_mode=True
+
+# recipes for protocol types [obj. volume per well, allowable remaining nonusable volume in channel]
 viral_recipe={'Beads':[20,800],
 'Wone':[100,600],
 'Wtwo':[100,600],
@@ -57,7 +61,7 @@ def generate_recipe(mode,cn_samp,recipes):
     for key in recipes[mode].keys():
         vol_total=math.ceil((recipes[mode][key][0]*cn_samp)/100)*100
         num_cells=math.ceil(recipes[mode][key][0]*cn_samp/vol_max_pocillo)
-        vol_pocillo=vol_total/num_cells+recipes[mode][key][1]
+        vol_pocillo=math.ceil((vol_total/num_cells+recipes[mode][key][1])/100)*100
         final_recipe.update({key: [vol_pocillo,num_cells]})
     return final_recipe
 
@@ -67,62 +71,89 @@ def rep_data(n, name, f, d):
     d=d.replace('$date', '\'' + str(f) + '\'')
     return d
 
+def update_files(final_path,filename,final_data,operation_data):
+    f=open(final_path+'/scripts/'+filename, "rt") # open file
+    data = f.read()
+    for key in final_data.keys():
+        if key in data:
+            data=data.replace('$'+key+'_total_volume',str(final_data[key][0]*final_data[key][1]))
+            data=data.replace('$'+key+'_wells',str(final_data[key][1]))
+
+    for key in operation_data.keys():
+        if key in data:
+            data=data.replace(key,str(operation_data[key]))
+
+    f=open(os.path.join(final_path+'/scripts/',filename), "wt")
+    f.write(data)
+    f.close()
+
 ###############################################################################
 def main():
+    if demo_mode==False:
+        # Read the excel file from the run and obtain the dictionary of samples
+        excel = '/Users/covid19warriors/Documents/prueba.xlsx'
+        df = pd.read_excel (excel,
+         sheet_name='Deepwell layout', header = None, index_col = 0)
+        df = df.iloc[2:]
+        df_dict = df.to_dict('index')
+        merged_dict={}
+        for key in df_dict:
+            for key2 in df_dict[key]:
+                merged_dict[str(key)+format(key2)]=df_dict[key][key2]
 
-    # Read the excel file from the run and obtain the dictionary of samples
-    excel = '/Users/covid19warriors/Documents/prueba.xlsx'
-    df = pd.read_excel (excel,
-     sheet_name='Deepwell layout', header = None, index_col = 0)
-    df = df.iloc[2:]
-    df_dict = df.to_dict('index')
-    merged_dict={}
-    for key in df_dict:
-        for key2 in df_dict[key]:
-            merged_dict[str(key)+format(key2)]=df_dict[key][key2]
+        # count number of declared elements in Dictionary
+        num_samples_control = 0
+        for elem in merged_dict.values():
+            if elem != 0:
+                num_samples_control += 1
 
-    # count number of declared elements in Dictionary
-    num_samples_control = 0
-    for elem in merged_dict.values():
-        if elem != 0:
-            num_samples_control += 1
-
-    # Get sample data from user
-    control=False
-    while control==False:
-        num_samples = int(input('Número de muestras a procesar (excluidos PC + NC): '))
-        if (num_samples>0 and num_samples<=94):
-            control=True
+        # Get sample data from user
+        control=False
+        while control==False:
+            num_samples = int(input('Número de muestras a procesar (excluidos PC + NC): '))
+            if (num_samples>0 and num_samples<=94):
+                control=True
+            else:
+                print('Número de muestras debe ser un número entre 1 y 94 (2 son los controles)')
+                print('------------------------------------------------------------------------')
+        print('El número de muestras registradas en el excel es: '+str(num_samples_control))
+        if num_samples_control!=num_samples:
+            print('Error: El número de muestras entre excel y reportado no coincide, revisar por favor.')
+            exit()
         else:
-            print('Número de muestras debe ser un número entre 1 y 94 (2 son los controles)')
+            print('El número de muestras coincide')
             print('------------------------------------------------------------------------')
-    print('El número de muestras registradas en el excel es: '+str(num_samples_control))
-    if num_samples_control!=num_samples:
-        print('Error: El número de muestras entre excel y reportado no coincide, revisar por favor.')
-        exit()
+
+        # Get technician name
+        control=False
+        while control==False:
+            tec_name = '\''+(input('Nombre del técnico (usuario): '))+'\''
+            print('------------------------------------------------------------------------')
+            if isinstance(tec_name, str):
+                control=True
+            else:
+                print('Introduce tu usuario HUC, por favor')
+
+        # Get run session ID
+        control=False
+        while control==False:
+            id = int(input('ID run: '))
+            print('------------------------------------------------------------------------')
+            if isinstance(id,int):
+                control=True
+            else:
+                print('Por favor, assigna un ID numérico para este RUN')
     else:
-        print('El número de muestras coincide')
-        print('------------------------------------------------------------------------')
+        # Get sample data from user
+        control=False
+        while control==False:
+            num_samples = int(input('Número de muestras a procesar (excluidos PC + NC): '))
+            if (num_samples>0 and num_samples<=94):
+                control=True
+        id=43000
+        excel = '/Users/covid19warriors/Documents/prueba.xlsx'
+        tec_name='demo'
 
-    # Get technician name
-    control=False
-    while control==False:
-        tec_name = '\''+(input('Nombre del técnico (usuario): '))+'\''
-        print('------------------------------------------------------------------------')
-        if isinstance(tec_name, str):
-            control=True
-        else:
-            print('Introduce tu usuario HUC, por favor')
-
-    # Get run session ID
-    control=False
-    while control==False:
-        id = int(input('ID run: '))
-        print('------------------------------------------------------------------------')
-        if isinstance(id,int):
-            control=True
-        else:
-            print('Por favor, assigna un ID numérico para este RUN')
 
     # Get date
     fecha=datetime.now()
@@ -135,7 +166,8 @@ def main():
 
     num_samples_c = math.ceil(num_samples/8)*8 # corrected num_samples value to calculate needed volumes
     final_data=generate_recipe(protocol,num_samples_c,recipes)
-    operation_data={'$technician': str(tec_name), '$num_samples': str(num_samples), '$date': str(t_registro) }
+    print(final_data)
+    operation_data={'$technician': str(tec_name), '$num_samples': str(num_samples), '$date': str(t_registro), '$run_id': str(id) }
 
     #determine output path
     run_name = str(dia_registro)+'_OT'+str(id)+'_'+protocol
@@ -148,7 +180,15 @@ def main():
         os.mkdir(final_path+'/results')
         os.mkdir(final_path+'/logs')
         os.system('cp ' + excel +' '+ final_path+'/OT'+str(id)+'_samples.xlsx') # copy excel input file to destination
-        generate_multi_well(final_path)
+        if protocol == 'V':
+            generate_multi_well_viral(final_path,final_data)
+        elif protocol == 'P':
+            generate_multi_well_pathogen_IC(final_path,final_data)
+            generate_multi_well_pathogen_R(final_path,final_data)
+    else:
+        print('BEWARE! This protocol and ID run already exists! Exitting')
+        exit()
+
 
     # move protocol .py files to final destination
     for file in os.listdir(protocol_path): # look for all protocols in folder
@@ -160,56 +200,13 @@ def main():
     # change values to protocols for final user
     for filename in os.listdir(final_path+'/scripts/'):
         if re.match('KA',filename):
-            f=open(final_path+'/scripts/'+filename, "rt") # open file
-            data = f.read()
-            print(final_data)
-            for key in final_data.keys():
-                if key in data:
-                    data=data.replace('$'+key+'_total_volume',str(final_data[key][0]))
-                    data=data.replace('$'+key+'_wells',str(final_data[key][1]))
-
-            for key in operation_data.keys():
-                if key in data:
-                    data=data.replace(key,str(operation_data[key]))
-
-            #final_protocol=rep_data(num_samples, tec_name, t_registro, data) #replace data
-            f=open(os.path.join(final_path+'/scripts/',filename), "wt")
-            f.write(data)
-            f.close()
+            update_files(final_path,filename,final_data,operation_data)
 
         elif re.match('KB',filename):
-            f=open(final_path+'/scripts/'+filename, "rt") # open file
-            data = f.read()
-            for key in final_data.keys():
-                if key in data:
-                    data=data.replace('$'+key+'_total_volume',str(final_data[key][0]))
-                    data=data.replace('$'+key+'_wells',str(final_data[key][1]))
-
-            for key in operation_data.keys():
-                if key in data:
-                    data=data.replace(key,str(operation_data[key]))
-
-            #final_protocol=rep_data(num_samples, tec_name, t_registro, data) #replace data
-            f=open(os.path.join(final_path+'/scripts/',filename), "wt")
-            f.write(data)
-            f.close()
+            update_files(final_path,filename,final_data,operation_data)
 
         elif re.match('KC',filename):
-            f=open(final_path+'/scripts/'+filename, "rt") # open file
-            data = f.read()
-            for key in final_data.keys():
-                if key in data:
-                    data=data.replace('$'+key+'_total_volume',str(final_data[key][0]))
-                    data=data.replace('$'+key+'_wells',str(final_data[key][1]))
-
-            for key in operation_data.keys():
-                if key in data:
-                    data=data.replace(key,str(operation_data[key]))
-
-            #final_protocol=rep_data(num_samples, tec_name, t_registro, data) #replace data
-            f=open(os.path.join(final_path+'/scripts/',filename), "wt")
-            f.write(data)
-            f.close()
+            update_files(final_path,filename,final_data,operation_data)
 
         else:
             print('No files found')

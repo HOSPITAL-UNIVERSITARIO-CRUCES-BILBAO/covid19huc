@@ -19,18 +19,18 @@ metadata = {
 }
 
 '''
-'technician': '$technician'
-'date': '$date'
+'technician': $technician
+'date': $date
 '''
 
 
 #Defined variables
 ##################
 
-NUM_SAMPLES = 35
+NUM_SAMPLES = $num_samples
 air_gap_vol = 10
 air_gap_vol_elutionbuffer = 10
-run_id =  '43002'
+run_id =  $run_id
 air_gap_ic = 5
 WBone_vol=100
 WBtwo_vol=100
@@ -97,8 +97,8 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
-                          num_wells=1,
+                          reagent_reservoir_volume=$Wone_total_volume, #100*NUM_SAMPLES,
+                          num_wells=$Wone_wells,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
@@ -107,8 +107,8 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
-                          num_wells=1,
+                          reagent_reservoir_volume=$Wtwo_total_volume, #100*NUM_SAMPLES,
+                          num_wells=$Wtwo_wells,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
 
@@ -118,7 +118,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           rinse=False,
                           rinse_loops=3,
                           delay=2,
-                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
+                          reagent_reservoir_volume=$Lysis_total_volume, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -128,18 +128,18 @@ def run(ctx: protocol_api.ProtocolContext):
                             flow_rate_dispense=1,
                             rinse=False,
                             delay=0,
-                            reagent_reservoir_volume=1600,#50*NUM_SAMPLES,
-                            num_wells=1,
+                            reagent_reservoir_volume=$Elution_total_volume,#50*NUM_SAMPLES,
+                            num_wells=$Elution_wells,
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
 
-    IC = Reagent(name='Magnetic beads and Lysis',
+    IC = Reagent(name='IC',
                     flow_rate_aspirate=1,
                     flow_rate_dispense=3,
                     rinse=True,
-                    num_wells=1,
+                    num_wells=$IC_wells,
                     delay=2,
-                    reagent_reservoir_volume=1050,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=$IC_total_volume,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
@@ -148,9 +148,9 @@ def run(ctx: protocol_api.ProtocolContext):
                     flow_rate_dispense=0.5,
                     rinse=True,
                     rinse_loops=4,
-                    num_wells=1,
+                    num_wells=$Beads_wells,
                     delay=2,
-                    reagent_reservoir_volume=1600,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=$Beads_total_volume,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
