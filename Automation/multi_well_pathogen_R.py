@@ -46,11 +46,11 @@ def generate_multi_well_pathogen_R(path, recipe):
 
     # finally wash one
     if recipe['Wone'][1] == wash_two_max:
-        colors.extend([color_two for i in range(recipe['Wone'][1])])
+        colors.extend([color_one for i in range(recipe['Wone'][1])])
         # generate labels of how much volume should be put into each well
         bar_label.extend([recipe['Wone'][0] for i in range(recipe['Wone'][1])])
     else:
-        colors.extend([color_two for i in range(recipe['Wone'][1])])
+        colors.extend([color_one for i in range(recipe['Wone'][1])])
         colors.extend(['white' for i in range(wash_one_max-recipe['Wone'][1])])
         bar_label.extend([recipe['Wone'][0] for i in range(recipe['Wone'][1])])
         bar_label.extend([0 for i in range(wash_one_max - recipe['Wone'][1])])

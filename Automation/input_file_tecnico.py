@@ -19,7 +19,7 @@ demo_mode=True
 viral_recipe={'Beads':[20,800],
 'Wone':[100,600],
 'Wtwo':[100,600],
-'IC':[10,900],
+'IC':[10,1600],
 'Elution':[50,600],
 'Lysis':[100,600]
 }
@@ -27,7 +27,7 @@ viral_recipe={'Beads':[20,800],
 pathogen_recipe={'Beads':[260,600],
 'Wone':[300,600],
 'Wtwo':[450,600],
-'IC':[10,900],
+'IC':[10,1600],
 'Elution':[90,600],
 'Lysis':[260,600]
 }

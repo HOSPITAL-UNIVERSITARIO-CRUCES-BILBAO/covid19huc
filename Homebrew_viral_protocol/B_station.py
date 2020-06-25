@@ -14,7 +14,7 @@ metadata = {
     'protocolName': 'B Station',
     'author': 'Hiart Maortua & Aitor Gastaminza based on codes developed by José Luis Villanueva & Eva González (jlvillanueva@clinic.cat)',
 'source': 'Hospital Clínic Barcelona, Hospital Cruces Bilbao',
-    'apiLevel': '2.0',
+    'apiLevel': '2.4',
     'description': 'Protocol for RNA extraction using MagMax Viral reactives'
 }
 
@@ -50,23 +50,23 @@ def run(ctx: protocol_api.ProtocolContext):
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': False, 'description': 'Add 100 ul Lysis Buffer and then move to station A'},
+        1: {'Execute': True, 'description': 'Add 100 ul Lysis Buffer and then move to station A'},
         2: {'Execute': False, 'description': 'Add IC to the plate coming from station A'},
-        3: {'Execute': False, 'description': 'Mix beads'},
-        4: {'Execute': False, 'description': 'Transfer beads and mix (dispose tip)'},
-        5: {'Execute': False, 'description': 'Wait with magnet OFF after beads', 'wait_time': 10},  # 60
-        6: {'Execute': False, 'description': 'Wait with magnet ON after beads', 'wait_time': 10},  # 900
-        7: {'Execute': False, 'description': 'Remove supernatant'},
-        8: {'Execute': False, 'description': 'Add W1 and mix (magnet OFF)'},
-        9: {'Execute': False, 'description': 'Wait with magnet ON', 'wait_time': 10},  # 900
+        3: {'Execute': True, 'description': 'Mix beads'},
+        4: {'Execute': True, 'description': 'Transfer beads and mix (dispose tip)'},
+        5: {'Execute': True, 'description': 'Wait with magnet OFF after beads', 'wait_time': 15},  # 60
+        6: {'Execute': True, 'description': 'Wait with magnet ON after beads', 'wait_time': 240},  # 900
+        7: {'Execute': True, 'description': 'Remove supernatant'},
+        8: {'Execute': True, 'description': 'Add W1 and mix (magnet OFF)'},
+        9: {'Execute': True, 'description': 'Wait with magnet ON', 'wait_time': 90},  # 900
         10: {'Execute': True, 'description': 'Remove W1'},
         11: {'Execute': True, 'description': 'Add W2 and mix (magnet OFF)'},
-        12: {'Execute': True, 'description': 'Wait with magnet ON', 'wait_time': 10},  # 900
+        12: {'Execute': True, 'description': 'Wait with magnet ON', 'wait_time': 90},  # 900
         13: {'Execute': True, 'description': 'Remove supernatant'},
-        14: {'Execute': True, 'description': 'Allow to dry (magnet ON)', 'wait_time': 300},
+        14: {'Execute': True, 'description': 'Allow to dry W2 (magnet ON)', 'wait_time': 600},
         15: {'Execute': True, 'description': 'Add 50 ul Elution Buffer (magnet OFF) and mix'},
         16: {'Execute': True, 'description': 'Wait with magnet OFF after water', 'wait_time': 60},  # 60
-        17: {'Execute': True, 'description': 'Wait with magnet ON after water', 'wait_time': 120},  # 300
+        17: {'Execute': True, 'description': 'Wait with magnet ON after water', 'wait_time': 90},  # 300
         18: {'Execute': True, 'description': 'Transfer to final elution plate'}
 
         }
@@ -111,7 +111,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
+                          reagent_reservoir_volume=3000, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695,
@@ -122,7 +122,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
+                          reagent_reservoir_volume=3000, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695,
@@ -134,7 +134,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           rinse=False,
                           rinse_loops=3,
                           delay=2,
-                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
+                          reagent_reservoir_volume=3000, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695,
@@ -145,7 +145,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             flow_rate_dispense=1,
                             rinse=False,
                             delay=0,
-                            reagent_reservoir_volume=1600,#50*NUM_SAMPLES,
+                            reagent_reservoir_volume=1800,#50*NUM_SAMPLES,
                             num_wells=1,
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
@@ -166,7 +166,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse=False,
                     num_wells=1,
                     delay=2,
-                    reagent_reservoir_volume=1050,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=1800,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
@@ -179,7 +179,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse_loops=4,
                     num_wells=1,
                     delay=2,
-                    reagent_reservoir_volume=1600,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=1300,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695,
                     tip_recycling = ['2'])  # Prismatic
@@ -321,7 +321,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # Lysis buffer 100ul Deepwell plate and later will be the plate with samples
     ############################################
-    magdeck = ctx.load_module('magdeck', '6')
+    magdeck = ctx.load_module('Magnetic Module Gen2', '6')
     deepwell = magdeck.load_labware(
         'nest_96_wellplate_2000ul', 'Deepwell plate')
 
@@ -337,7 +337,7 @@ def run(ctx: protocol_api.ProtocolContext):
     tempdeck = ctx.load_module('tempdeck', '3')
     #tempdeck.set_temperature(temperature)
     qpcr_plate = tempdeck.load_labware(
-        'nest_96_wellplate_100ul_pcr_full_skirt',
+        'opentrons_96_aluminumblock_nest_wellplate_100ul',
         'chilled qPCR final plate')
 
 
@@ -648,17 +648,15 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Aspirate from Reservoir column: ' +
                             str(WashBuffer1.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
-                if i != 0 and j!= 0:
-                    rinse = False
                 move_vol_multichannel(m300, reagent=WashBuffer1, source=WashBuffer1.reagent_reservoir[WashBuffer1.col],
                                dest=sample_plate[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[0,offset],
-                               pickup_height=pickup_height, rinse=rinse,
+                               pickup_height=pickup_height, rinse=WashBuffer1.rinse,
                                disp_height=-4, blow_out=True, touch_tip=False)
 
                 #m300.drop_tip(home_after=True)
                 #m300.touch_tip(speed = 20, v_offset = -5)
             custom_mix(m300, reagent=WashBuffer1, location=sample_plate[i], vol=transfer_vol,
-                       rounds=10, blow_out=True, mix_height=15, x_offset=[0,offset], source_height=0.5)
+                       rounds=10, blow_out=True, mix_height=15, x_offset=[0,offset], source_height=0.3)
             m300.touch_tip(speed = 20, v_offset = -5)
             m300.return_tip(tips300w1[0].rows()[0][i])
 
@@ -709,7 +707,7 @@ def run(ctx: protocol_api.ProtocolContext):
             m300.pick_up_tip(tips300w1[0].rows()[0][i])
             for transfer_vol in supernatant_vol:
                 # Pickup_height is fixed here
-                pickup_height = 0.5
+                pickup_height = 0.4
                 ctx.comment('Aspirate from deep well column: ' + str(i + 1))
                 ctx.comment('Pickup height is ' +
                             str(pickup_height) + ' (fixed)')
@@ -754,17 +752,16 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Aspirate from Reservoir column: ' +
                             str(WashBuffer1.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
-                if i != 0 and j!= 0:
-                    rinse = False
+
                 move_vol_multichannel(m300, reagent=WashBuffer2, source=WashBuffer2.reagent_reservoir[WashBuffer2.col],
                                dest=sample_plate[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[0,offset],
-                               pickup_height=pickup_height, rinse=rinse,
+                               pickup_height=pickup_height, rinse=WashBuffer2.rinse,
                                disp_height=-4, blow_out=True, touch_tip=False)
 
                 #m300.drop_tip(home_after=True)
                 m300.touch_tip(speed = 20, v_offset = -5)
             custom_mix(m300, reagent=WashBuffer2, location=sample_plate[i], vol=150,
-                       rounds=10, blow_out=True, mix_height=15, x_offset=[0,offset], source_height=0.5)
+                       rounds=10, blow_out=True, mix_height=15, x_offset=[0,offset], source_height=0.3)
             m300.touch_tip(speed = 20, v_offset = -5)
             m300.return_tip(tips300w2[0].rows()[0][i])
 
@@ -815,7 +812,7 @@ def run(ctx: protocol_api.ProtocolContext):
             m300.pick_up_tip(tips300w2[0].rows()[0][i])
             for transfer_vol in supernatant_vol:
                 # Pickup_height is fixed here
-                pickup_height = 0.5
+                pickup_height = 0.4
                 ctx.comment('Aspirate from deep well column: ' + str(i + 1))
                 ctx.comment('Pickup height is ' +
                             str(pickup_height) + ' (fixed)')
@@ -886,7 +883,7 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx.comment('Mixing sample with Water and LTA')
             # Mixing
             custom_mix(m300, ElutionBuffer, sample_plate[i], vol=60, rounds=10,
-                       blow_out=True, mix_height=155,x_offset=[0,offset],source_height=0.4)
+                       blow_out=True, mix_height=15,x_offset=[0,offset],source_height=0.4)
             m300.drop_tip(home_after=True)
             tip_track['counts'][m300] += 8
         end = datetime.now()
@@ -959,7 +956,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 ctx.comment('Pickup height is ' +
                             str(pickup_height) + ' (fixed)')
                 move_vol_multichannel(m300, reagent=Elution, source=sample_plate[i],
-                               dest=qpcr_plate_dest[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[offset,0],
+                               dest=qpcr_plate_dest[i], vol=transfer_vol, air_gap_vol=air_gap_vol, x_offset=[0,0],
                                pickup_height=pickup_height, rinse=False,
                                disp_height=-4, blow_out=True, touch_tip=False)
 
@@ -1002,3 +999,5 @@ def run(ctx: protocol_api.ProtocolContext):
         'Finished! \nMove deepwell plates to station C.')
     ctx.comment('Used tips in total: ' + str(tip_track['counts'][m300]))
     ctx.comment('Used racks in total: ' + str(tip_track['counts'][m300] / 96))
+    ctx.comment('Used tips in total: ' + str(tip_track['counts'][m20]))
+    ctx.comment('Used racks in total: ' + str(tip_track['counts'][m20] / 96))
