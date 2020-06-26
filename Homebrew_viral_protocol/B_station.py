@@ -321,7 +321,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # Lysis buffer 100ul Deepwell plate and later will be the plate with samples
     ############################################
-    magdeck = ctx.load_module('Magnetic Module Gen2', '6')
+    magdeck = ctx.load_module('Magnetic Module Gen2', '6') #Magnetic Module Gen2
     deepwell = magdeck.load_labware(
         'nest_96_wellplate_2000ul', 'Deepwell plate')
 

@@ -27,7 +27,7 @@ metadata = {
 #Defined variables
 ##################
 
-NUM_SAMPLES = 35
+NUM_SAMPLES = 48
 air_gap_vol = 10
 air_gap_vol_elutionbuffer = 10
 run_id =  '43002'
@@ -97,7 +97,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
+                          reagent_reservoir_volume=5400, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -107,7 +107,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_dispense=1,
                           rinse=True,
                           delay=2,
-                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
+                          reagent_reservoir_volume=5400, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -118,7 +118,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           rinse=False,
                           rinse_loops=3,
                           delay=2,
-                          reagent_reservoir_volume=3500, #100*NUM_SAMPLES,
+                          reagent_reservoir_volume=5400, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
                           v_fondo=695)  # Flat surface
@@ -128,7 +128,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             flow_rate_dispense=1,
                             rinse=False,
                             delay=0,
-                            reagent_reservoir_volume=1600,#50*NUM_SAMPLES,
+                            reagent_reservoir_volume=3300,#50*NUM_SAMPLES,
                             num_wells=1,
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
@@ -139,7 +139,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse=True,
                     num_wells=1,
                     delay=2,
-                    reagent_reservoir_volume=1050,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=2000,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
@@ -150,7 +150,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse_loops=4,
                     num_wells=1,
                     delay=2,
-                    reagent_reservoir_volume=1600,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=1800,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 

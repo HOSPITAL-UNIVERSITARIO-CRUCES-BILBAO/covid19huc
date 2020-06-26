@@ -24,7 +24,7 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 35
+NUM_SAMPLES = 48
 
 air_gap_vol = 20
 air_gap_mmix = 5
@@ -135,7 +135,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       rinse = False,
                       flow_rate_aspirate = 1,
                       flow_rate_dispense = 1,
-                      reagent_reservoir_volume = 880, # volume_mmix_available,
+                      reagent_reservoir_volume = 1000, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,
