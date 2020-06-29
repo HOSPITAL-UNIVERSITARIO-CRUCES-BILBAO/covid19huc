@@ -133,8 +133,8 @@ def run(ctx: protocol_api.ProtocolContext):
     # Reagents and their characteristics
     MMIX = Reagent(name = 'Master Mix',
                       rinse = False,
-                      flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
+                      flow_rate_aspirate = 2,
+                      flow_rate_dispense = 4,
                       reagent_reservoir_volume = 1000, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
@@ -386,7 +386,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, location.top(z = 5))
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 30):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 30):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')

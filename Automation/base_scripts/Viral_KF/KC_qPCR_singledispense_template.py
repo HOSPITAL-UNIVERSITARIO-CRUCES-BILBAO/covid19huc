@@ -69,13 +69,13 @@ for mmix_type in MMIX_recipe.keys():
     for needed_vol in MMIX_recipe[mmix_type]:
         MMIX_make[mmix_type].append(needed_vol * NUM_SAMPLES * 1.1)
 
-volume_mmix_available = (NUM_SAMPLES * 1.1 * MMIX_vol[mmix_selection][0] +50)  # Total volume of mastermix that will be prepared + an extra 50ul hiding on the lower bottom
+volume_mmix_available = (NUM_SAMPLES * 1.1 * MMIX_vol[mmix_selection][0])  # Total volume of mastermix that will be prepared
 
 #############################################
 # Calculated variables
 area_section_screwcap = (np.pi * diameter_screwcap**2) / 4
 h_cone = (volume_cone * 3 / area_section_screwcap)
-num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on flan
+num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
     import os
@@ -133,9 +133,9 @@ def run(ctx: protocol_api.ProtocolContext):
     # Reagents and their characteristics
     MMIX = Reagent(name = 'Master Mix',
                       rinse = False,
-                      flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
-                      reagent_reservoir_volume = volume_mmix_available, # volume_mmix_available,
+                      flow_rate_aspirate = 2,
+                      flow_rate_dispense = 4,
+                      eagent_reservoir_volume = volume_mmix_available, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,
@@ -386,7 +386,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, location.top(z = 5))
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 30):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 30):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')

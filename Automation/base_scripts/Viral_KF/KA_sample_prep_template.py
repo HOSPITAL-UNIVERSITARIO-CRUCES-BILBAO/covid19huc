@@ -23,8 +23,8 @@ metadata = {
 
 #Defined variables
 ##################
-NUM_SAMPLES = $num_samples #including PC and NC
-NUM_SAMPLES = NUM_SAMPLES - 2
+NUM_SAMPLES = $num_samples #excluding PC and NC
+#NUM_SAMPLES = NUM_SAMPLES - 2
 air_gap_vol = 0
 run_id = $run_id
 volume_sample = 50
@@ -52,7 +52,7 @@ def run(ctx: protocol_api.ProtocolContext):
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': False, 'description': 'Add lysis buffer'},
         2: {'Execute': True, 'description': 'Add samples (50ul)'},
-        3: {'Execute': True, 'description': 'Add internal control (10ul)'}
+        3: {'Execute': False, 'description': 'Add internal control (10ul)'}
     }
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:

@@ -133,10 +133,10 @@ def run(ctx: protocol_api.ProtocolContext):
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
 
-    IC = Reagent(name='IC',
+    IC = Reagent(name='Magnetic beads and Lysis',
                     flow_rate_aspirate=1,
                     flow_rate_dispense=3,
-                    rinse=True,
+                    rinse=False,
                     num_wells=$IC_wells,
                     delay=2,
                     reagent_reservoir_volume=$IC_total_volume,#20 * NUM_SAMPLES * 1.1,
@@ -192,7 +192,7 @@ def run(ctx: protocol_api.ProtocolContext):
                        rate = reagent.flow_rate_dispense)  # dispense all
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
         if blow_out == True:
-            pipet.blow_out(dest.top(z = -2))
+            pipet.blow_out(dest.top(z = -5))
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, dest.top(z = -2))
         if post_dispense == True:

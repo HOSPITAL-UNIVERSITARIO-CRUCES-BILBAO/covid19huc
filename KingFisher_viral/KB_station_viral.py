@@ -136,7 +136,7 @@ def run(ctx: protocol_api.ProtocolContext):
     IC = Reagent(name='Magnetic beads and Lysis',
                     flow_rate_aspirate=1,
                     flow_rate_dispense=3,
-                    rinse=True,
+                    rinse=False,
                     num_wells=1,
                     delay=2,
                     reagent_reservoir_volume=2000,#20 * NUM_SAMPLES * 1.1,
@@ -192,7 +192,7 @@ def run(ctx: protocol_api.ProtocolContext):
                        rate = reagent.flow_rate_dispense)  # dispense all
         ctx.delay(seconds = reagent.delay) # pause for x seconds depending on reagent
         if blow_out == True:
-            pipet.blow_out(dest.top(z = -2))
+            pipet.blow_out(dest.top(z = -5))
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, dest.top(z = -2))
         if post_dispense == True:
@@ -525,7 +525,7 @@ def run(ctx: protocol_api.ProtocolContext):
             for j, transfer_vol in enumerate(IC_transfer_vol):
                 move_vol_multichannel(m20, reagent=IC, source=IC.reagent_reservoir[IC.col],
                                       dest=kf_destination[i], vol=transfer_vol,
-                                      air_gap_vol=air_gap_ic, x_offset=x_offset,
+                                      air_gap_vol=air_gap_ic, x_offset=[0,0],
                                       pickup_height=0.2, disp_height = -40.7,
                                       rinse=IC.rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
