@@ -15,7 +15,7 @@ metadata = {
     'author': 'Aitor Gastaminza,  José Luis Villanueva & Eva González (jlvillanueva@clinic.cat)',
 'source': 'Hospital Clínic Barcelona, Hospital Cruces Bilbao',
     'apiLevel': '2.0',
-    'description': 'Protocol to fill KingFisher Deepwell plates with reagents - Pathogen Kit (ref 4462359)'
+    'description': 'Protocol to fill KingFisher Deepwell plates with reagents - Viral Kit (ref ...)'
 }
 
 '''
@@ -179,7 +179,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if rinse == True:
             custom_mix(pipet, reagent, location = source, vol = vol,
                        rounds = reagent.rinse_loops, blow_out = True, mix_height = 0,
-                       x_offset = x_offset)
+                       x_offset = x_offset, post_airgap=False,post_dispense=False, post_dispense_vol=20,post_airgap_vol=10)
         # SOURCE
         s = source.bottom(pickup_height).move(Point(x = x_offset[0]))
         pipet.aspirate(vol, s, rate = reagent.flow_rate_aspirate)  # aspirate liquid
@@ -194,7 +194,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if blow_out == True:
             pipet.blow_out(dest.top(z = -5))
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, dest.top(z = -2))
+            pipet.aspirate(post_airgap_vol, dest.top(z = -2))
         if post_dispense == True:
             pipet.dispense(post_dispense_vol, dest.top(z = -2))
         if touch_tip == True:
@@ -229,7 +229,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_dispense == True:
             pipet.dispense(post_dispense_vol, location.top(z = -2))
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, location.top(z = 5))
+            pipet.aspirate(post_airgap_vol, location.top(z = 5))
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 50):
         nonlocal ctx
@@ -388,7 +388,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                dest = kf_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 0.3, rinse = rinse, disp_height = -2,
-                               blow_out = True, touch_tip = False, post_airgap=True)
+                               blow_out = False, touch_tip = False, post_airgap=True,post_dispense=True)
 
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8

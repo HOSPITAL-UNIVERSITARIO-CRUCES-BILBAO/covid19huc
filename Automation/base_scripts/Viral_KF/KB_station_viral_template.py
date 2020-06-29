@@ -13,9 +13,9 @@ import csv
 metadata = {
     'protocolName': 'Kingfisher Viral Station',
     'author': 'Aitor Gastaminza,  José Luis Villanueva & Eva González (jlvillanueva@clinic.cat)',
-'source': 'Hospital Clínic Barcelona, Hospital Cruces Bilbao',
+    'source': 'Hospital Clínic Barcelona, Hospital Cruces Bilbao',
     'apiLevel': '2.0',
-    'description': 'Protocol to fill KingFisher Deepwell plates with reagents - Pathogen Kit (ref 4462359)'
+    'description': 'Protocol to fill KingFisher Deepwell plates with reagents - Viral Kit (ref ...)'
 }
 
 '''
@@ -167,7 +167,7 @@ def run(ctx: protocol_api.ProtocolContext):
     def move_vol_multichannel(pipet, reagent, source, dest, vol, air_gap_vol, x_offset,
                        pickup_height, rinse, disp_height, blow_out, touch_tip,
                        post_dispense=False, post_dispense_vol=20,
-                       post_airgap=True, post_airgap_vol=10):
+                       post_airgap=False, post_airgap_vol=10):
         '''
         x_offset: list with two values. x_offset in source and x_offset in destination i.e. [-1,1]
         pickup_height: height from bottom where volume
@@ -194,7 +194,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if blow_out == True:
             pipet.blow_out(dest.top(z = -5))
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, dest.top(z = -2))
+            pipet.aspirate(post_airgap_vol, dest.top(z = -2))
         if post_dispense == True:
             pipet.dispense(post_dispense_vol, dest.top(z = -2))
         if touch_tip == True:
@@ -204,7 +204,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
-    source_height = 3, post_airgap=True, post_airgap_vol=10,
+    source_height = 3, post_airgap=False, post_airgap_vol=10,
     post_dispense=False, post_dispense_vol=20,x_offset = x_offset):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
@@ -229,7 +229,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_dispense == True:
             pipet.dispense(post_dispense_vol, location.top(z = -2))
         if post_airgap == True:
-            pipet.dispense(post_airgap_vol, location.top(z = 5))
+            pipet.aspirate(post_airgap_vol, location.top(z = 5))
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 50):
         nonlocal ctx
@@ -388,7 +388,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                dest = kf_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
                                pickup_height = 0.3, rinse = rinse, disp_height = -2,
-                               blow_out = True, touch_tip = False, post_airgap=True)
+                               blow_out = False, touch_tip = False, post_airgap=False)
 
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8

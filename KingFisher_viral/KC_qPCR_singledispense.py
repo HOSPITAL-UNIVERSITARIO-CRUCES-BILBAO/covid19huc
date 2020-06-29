@@ -15,7 +15,7 @@ metadata = {
     'author': 'Malen Aguirregabiria, Aitor Gastaminza & José Luis Villanueva (jlvillanueva@clinic.cat)',
     'source': 'Hospital Clínic Barcelona, Hospital Universitario Cruces Bilbao',
     'apiLevel': '2.2',
-    'description': 'Protocol for Kingfisher sample setup (C) - Pathogen Kit (ref 4462359) using CORE script'
+    'description': 'Protocol for Kingfisher sample setup (C) - Viral Kit (ref ...) using CORE script'
 
 }
 '''
