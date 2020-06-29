@@ -23,8 +23,8 @@ metadata = {
 
 #Defined variables
 ##################
-NUM_SAMPLES = 96
-NUM_SAMPLES = NUM_SAMPLES - 2 # exclude positive and negative controls!
+NUM_SAMPLES = 96 #excluding PC and NC
+
 air_gap_vol = 0
 run_id = 'test'
 volume_sample = 200
@@ -62,7 +62,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     if not ctx.is_simulating():
         # Folder and file_path for log time
-        folder_path = '/var/lib/jupyter/notebooks/'+run_id
+        folder_path = '/var/lib/jupyter/notebooks/'+str(run_id)
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
         file_path = folder_path + '/KA_SampleSetup_viral_time_log.txt'

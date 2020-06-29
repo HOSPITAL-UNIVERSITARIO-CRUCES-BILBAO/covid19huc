@@ -25,6 +25,7 @@ metadata = {
 #Defined variables
 ##################
 NUM_SAMPLES = $num_samples
+NUM_SAMPLES = NUM_SAMPLES + 2 # MMIX to be dispensed for PC and NC
 
 air_gap_vol = 20
 air_gap_mmix = 5
@@ -75,7 +76,7 @@ volume_mmix_available = (NUM_SAMPLES * 1.1 * MMIX_vol[mmix_selection][0])  # Tot
 # Calculated variables
 area_section_screwcap = (np.pi * diameter_screwcap**2) / 4
 h_cone = (volume_cone * 3 / area_section_screwcap)
-num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
+num_cols = math.ceil((NUM_SAMPLES-2) / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
     import os
@@ -103,7 +104,7 @@ def run(ctx: protocol_api.ProtocolContext):
             STEPS[s]['wait_time'] = 0
 
     #Folder and file_path for log time
-    folder_path = '/var/lib/jupyter/notebooks/'+run_id
+    folder_path = '/var/lib/jupyter/notebooks/'+str(run_id)
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)

@@ -24,8 +24,8 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 96
-#NUM_SAMPLES = NUM_SAMPLES -1 #Remove last sample (PC), done manually
+NUM_SAMPLES = 96 # excluding PC and NC
+NUM_SAMPLES = NUM_SAMPLES + 2 #PC and NC need mastermix
 
 
 air_gap_vol = 20
@@ -77,7 +77,7 @@ volume_mmix_available = (NUM_SAMPLES * 1.1 * MMIX_vol[mmix_selection][0])  # Tot
 # Calculated variables
 area_section_screwcap = (np.pi * diameter_screwcap**2) / 4
 h_cone = (volume_cone * 3 / area_section_screwcap)
-num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
+num_cols = math.ceil((NUM_SAMPLES-2) / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
     import os
@@ -92,20 +92,20 @@ def run(ctx: protocol_api.ProtocolContext):
         2: {'Execute': False, 'description': 'Transfer MMIX with P300'},
         3: {'Execute': True, 'description': 'Transfer MMIX with P20'},
         4: {'Execute': True, 'description': 'Transfer elution'},
-        5: {'Execute': True, 'description': 'Clean up NC and PC wells'},
-        6: {'Execute': True, 'description': 'Transfer PC'},
-        7: {'Execute': True, 'description': 'Transfer NC'}
+        5: {'Execute': False, 'description': 'Clean up NC and PC wells'},
+        6: {'Execute': False, 'description': 'Transfer PC'},
+        7: {'Execute': False, 'description': 'Transfer NC'}
     }
 
     if STEPS[2]['Execute']==True:
-        STEPS[3]['Execute']=False # just to make sure it P300 is being used, do not load P20 single
+        STEPS[3]['Execute']=False # just to make sure if P300 is being used, do not load P20 single
 
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
             STEPS[s]['wait_time'] = 0
 
     #Folder and file_path for log time
-    folder_path = '/var/lib/jupyter/notebooks/'+run_id
+    folder_path = '/var/lib/jupyter/notebooks/'+str(run_id)
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
@@ -135,9 +135,9 @@ def run(ctx: protocol_api.ProtocolContext):
     # Reagents and their characteristics
     MMIX = Reagent(name = 'Master Mix',
                       rinse = False,
-                      flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
-                      reagent_reservoir_volume = 2000, # volume_mmix_available,
+                      flow_rate_aspirate = 2,
+                      flow_rate_dispense = 4,
+                      reagent_reservoir_volume = volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,
