@@ -103,6 +103,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_aspirate=0.75,
                           flow_rate_dispense=0.5,
                           rinse=False,
+                          rinse_loops = 5,
                           delay=2,
                           reagent_reservoir_volume=27000,#lysis_vol*1.1*NUM_SAMPLES,
                           num_wells=3,#math.ceil((NUM_SAMPLES + 5) * lysis_vol / max_multiwell_volume),
@@ -239,7 +240,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, location.top(z = 5))
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 50):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.2, extra_volume = 50):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')

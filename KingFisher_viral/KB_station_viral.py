@@ -64,7 +64,7 @@ def run(ctx: protocol_api.ProtocolContext):
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
-        file_path = folder_path + '/KB_station_pathogen_time_log.txt'
+        file_path = folder_path + '/KB_station_viral_time_log.txt'
 
     # Define Reagents as objects with their properties
     class Reagent:
@@ -116,7 +116,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_aspirate=0.75,
                           flow_rate_dispense=0.5,
                           rinse=False,
-                          rinse_loops=3,
+                          rinse_loops=5,
                           delay=2,
                           reagent_reservoir_volume=5400, #100*NUM_SAMPLES,
                           num_wells=1,
@@ -231,7 +231,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if post_airgap == True:
             pipet.aspirate(post_airgap_vol, location.top(z = 5))
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 50):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.2, extra_volume = 50):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
@@ -387,8 +387,8 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
                                dest = kf_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 0.3, rinse = rinse, disp_height = -2,
-                               blow_out = False, touch_tip = False, post_airgap=True,post_dispense=True)
+                               pickup_height = 0.2, rinse = rinse, disp_height = -2,
+                               blow_out = True, touch_tip = False, post_airgap=True,post_dispense=True)
 
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
@@ -460,7 +460,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent = WashBuffer1, source = WashBuffer1.reagent_reservoir[WashBuffer1.col],
                                dest = wb1plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 0.3, rinse = rinse, disp_height = -2,
+                               pickup_height = 0.2, rinse = rinse, disp_height = -2,
                                blow_out = True, touch_tip = False, post_airgap=True)
 
         m300.drop_tip(home_after=False)
@@ -496,7 +496,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent = WashBuffer2, source = WashBuffer2.reagent_reservoir[WashBuffer2.col],
                                dest = wb2plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 0.3, rinse = rinse, disp_height = -2,
+                               pickup_height = 0.2, rinse = rinse, disp_height = -2,
                                blow_out = True, touch_tip = False, post_airgap=True)
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
@@ -601,12 +601,15 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent=Beads, source=Beads.reagent_reservoir[Beads.col],
                                       dest=kf_destination[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=pickup_height, disp_height = -8,
+                                      pickup_height=0.2, disp_height = -8,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 '''custom_mix(m300, Beads, work_destinations_cols[i] ,
                                    vol=70, rounds=10, blow_out=True, mix_height=8,
-                                   x_offset = x_offset, source_height=0.5, post_dispense=True)'''
+                                   x_offset = x_offset, source_height=0.5, post_dispense=True)
+                   m300.drop_tip(home_after=False)
+
+                                   '''
 
 
         m300.drop_tip(home_after=False)
