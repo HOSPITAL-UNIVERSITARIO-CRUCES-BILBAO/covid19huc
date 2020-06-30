@@ -89,6 +89,7 @@ def generate_multi_well_pathogen_R(path, recipe):
     # plt.show()
     plt.savefig(path + '/pathogen_R_multi_well_layout.png',
                 dpi=300, bbox_inches='tight')
+    return path + '/pathogen_R_multi_well_layout.png'
 
 '''import matplotlib.pyplot as plt
 

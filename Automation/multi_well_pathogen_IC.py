@@ -90,3 +90,4 @@ def generate_multi_well_pathogen_IC(path, recipe):
     # plt.show()
     plt.savefig(path + '/pathogen_IC_multi_well_layout.png',
                 dpi=300, bbox_inches='tight')
+    return path + '/pathogen_IC_multi_well_layout.png'

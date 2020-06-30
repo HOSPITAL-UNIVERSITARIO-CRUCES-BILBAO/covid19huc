@@ -49,3 +49,4 @@ def generate_multi_well_viral(path,recipe):
     plt.title('Reservoir')
     #plt.show()
     plt.savefig(path+'/viral_multi_well_layout.png',dpi=300,bbox_inches='tight')
+    return path+'/viral_multi_well_layout.png'
