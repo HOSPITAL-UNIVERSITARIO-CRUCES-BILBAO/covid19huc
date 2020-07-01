@@ -235,12 +235,12 @@ def main():
         os.mkdir(final_path+'/logs')
         os.system('cp ' + excel +' '+ final_path+'/OT'+str(id)+'_samples.xlsx') # copy excel input file to destination
         if protocol == 'V':
-            os.system('cp ' +'/Users/covid19warriors/Documents/covid19huc/Automation/volumes_viral_readme.html' + ' ' + final_path + '/readme.html')
+            os.system('cp ' +main_path +'covid19huc/Automation/volumes_viral_readme.html' + ' ' + final_path + '/readme.html')
             pV=generate_multi_well_viral(final_path,final_data)
             mini_well=generate_multi_mini_well(final_path,final_data,protocol)
             update_readme(final_path,'readme.html',protocol,[pV,mini_well],operation_data)
         elif protocol == 'P':
-            os.system('cp ' +'/Users/covid19warriors/Documents/covid19huc/Automation/volumes_pathogen_readme.html' + ' ' + final_path + '/readme.html')
+            os.system('cp ' +main_path +'covid19huc/Automation/volumes_pathogen_readme.html' + ' ' + final_path + '/readme.html')
             pB=generate_multi_well_pathogen_IC(final_path,final_data)
             pR=generate_multi_well_pathogen_R(final_path,final_data)
             mini_well=generate_multi_mini_well(final_path,final_data,protocol)
