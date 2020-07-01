@@ -12,14 +12,14 @@ def generate_multi_well_viral(path,recipe):
     y = [val for i in range(12)]
     toplabels=['W1','W2','L']
     toplabels.extend(['' for i in range(3,9)])
-    toplabels.extend(['E','IC','B'])
+    toplabels.extend(['E','',''])
 
-    bar_label=[recipe['Wone'][0],recipe['Wtwo'][0],recipe['Lysis'][0],0,0,0,0,0,0,recipe['Elution'][0],recipe['IC'][0],recipe['Beads'][0]]
+    bar_label=[recipe['Wone'][0],recipe['Wtwo'][0],recipe['Lysis'][0],0,0,0,0,0,0,recipe['Elution'][0],0,0]
     bar_label = [str(i)+'µl' for i in bar_label]
 
     colors=[color_one, color_two,color_one]
     colors.extend(['white' for i in range(3,9)])
-    colors.extend([color_one, color_two,color_one])
+    colors.extend([color_one, 'white','white'])
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -33,6 +33,10 @@ def generate_multi_well_viral(path,recipe):
         barplot[i].set_color(colors[i])
 
     for i in range(3,9):
+        barplot[i].set_ec('k')
+
+    #set old IC and Beads col to white
+    for i in range(10,12):
         barplot[i].set_ec('k')
 
     # add volumes to each well for each bar

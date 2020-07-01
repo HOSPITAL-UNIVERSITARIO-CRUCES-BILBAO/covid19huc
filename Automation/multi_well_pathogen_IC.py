@@ -16,18 +16,18 @@ def generate_multi_well_pathogen_IC(path, recipe):
     x = [i + 1 for i in range(12)]
     val = 10
     y = [val for i in range(12)]
-    toplabels = ['IC']
-    toplabels.extend(['' for i in range(4)])
+    #toplabels = ['']    IC column removed for the other well
+    toplabels=(['' for i in range(5)])
     toplabels.extend(['', 'Beads', '', '', '', 'Lysis', ''])
 
     # generate color table
-    # first for IC
-    colors = [color_one]
-    bar_label.extend([recipe['IC'][0] for i in range(recipe['IC'][1])])
+    # first for IC - removed and put IC in new well
+    '''colors = [color_one]
+    bar_label.extend([0 for i in range(recipe['IC'][1])])'''
 
     # second for 4 white positions
-    colors.extend(['white' for i in range(4)])
-    bar_label.extend([0 for i in range(4)])
+    colors=(['white' for i in range(5)])
+    bar_label=([0 for i in range(5)])
 
     # now beads
     if recipe['Beads'][1] == n_beads_max:

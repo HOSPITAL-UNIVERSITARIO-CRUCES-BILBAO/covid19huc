@@ -54,10 +54,10 @@ def run(ctx: protocol_api.ProtocolContext):
         4: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1 and stop until plate comes from A'},
         5: {'Execute': False, 'description': 'Transfer IC'},
         6: {'Execute': True, 'description': 'Transfer ICtwo'},
-        7: {'Execute': True, 'description': 'Mix beads'},
-        8: {'Execute': True, 'description': 'Transfer beads'},
-        9: {'Execute': False, 'description': 'Mix beadstwo'},
-        10: {'Execute': False, 'description': 'Transfer beadstwo'}
+        7: {'Execute': False, 'description': 'Mix beads'},
+        8: {'Execute': False, 'description': 'Transfer beads'},
+        9: {'Execute': True, 'description': 'Mix beadstwo'},
+        10: {'Execute': True, 'description': 'Transfer beadstwo'}
         }
 
     for s in STEPS:  # Create an empty wait_time
@@ -316,8 +316,8 @@ def run(ctx: protocol_api.ProtocolContext):
     # IC well rack
     ####################################
     tempdeck = ctx.load_module('tempdeck', '3')
-    ic_reservoir = tempdeck.load_labware(
-        'kingfisher_std_96_wellplate_550ul', 'Reservoir 12 channel, column 1')
+    ic_reservoir = ctx.load_labware(
+        'nest_96_wellplate_100ul_pcr_full_skirt','3', 'Wellplate with Beads and IC')
 
     # 12 well rack
     ####################################

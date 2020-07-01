@@ -315,9 +315,9 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # IC well rack
     ####################################
-    tempdeck = ctx.load_module('tempdeck', '3')
-    ic_reservoir = tempdeck.load_labware(
-        'kingfisher_std_96_wellplate_550ul', 'Reservoir 12 channel, column 1')
+    #tempdeck = ctx.load_module('tempdeck', '3')
+    ic_reservoir = ctx.load_labware(
+        'nest_96_wellplate_100ul_pcr_full_skirt','3', 'Wellplate with Beads and IC')
 
     # 12 well rack
     ####################################
