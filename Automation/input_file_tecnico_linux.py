@@ -139,6 +139,8 @@ def update_readme(final_path,filename,protocol,imagepath,operation_data):
 
 ###############################################################################
 def main():
+    global recipes, user_path, main_path, desktop_path, code_path, KFV_path, KFP_path, excel_path_recover, excel_path, excel_path_test
+
     print('Demo mode: '+str(demo_mode))
     if demo_mode==False:
     # Read the excel file from the run and obtain the dictionary of samples
