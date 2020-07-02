@@ -41,8 +41,8 @@ pathogen_recipe={'Beads':[260,600],
 recipes={'V': viral_recipe, 'P': pathogen_recipe}
 
 user_path = '/home/laboratorio/'
-main_path = user_path +'Documents/'
-desktop_path = user_path +'Desktop/'
+main_path = user_path +'Documentos/'
+desktop_path = user_path +'Escritorio/'
 code_path = main_path + 'covid19huc/Automation/base_scripts/'
 KFV_path = code_path + 'Viral_KF/'
 KFP_path = code_path + 'Pathogen_KF/'
