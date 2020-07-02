@@ -142,27 +142,43 @@ def main():
     print('Demo mode: '+str(demo_mode))
     if demo_mode==False:
     # Read the excel file from the run and obtain the dictionary of samples
-        excel_path = '/Users/covid19warriors/Desktop/fill.xlsx'
+        xls=pd.ExcelFile(excel_path)
+        code_data=pd.read_excel(xls,xls.sheet_names[2])
+        code_data=code_data.iloc[1:]
+
+        # generate listed dictionary for sampled plates
+        f=dict()
+        for i,key_row in enumerate(code_data['Table 1'].tolist()):
+            for idx,value in enumerate(code_data.iloc[i][1:]):
+                f.update({key_row+str(idx+1):value})
+        thermocycler_values=pd.DataFrame(f,index=[0]).transpose()
+
+        # count number of declared elements in Dictionary to check with user declared values
+        num_samples_control = 0
+        for elem in f.values():
+            if elem != 0:
+                num_samples_control += 1
     else:
         excel_path = excel_path_test
-        print('Num muestras test: 24')
+        xls=pd.ExcelFile(excel_path)
+        code_data=pd.read_excel(xls,xls.sheet_names[2])
+        code_data=code_data.iloc[1:]
 
-    xls=pd.ExcelFile(excel_path)
-    code_data=pd.read_excel(xls,xls.sheet_names[2])
-    code_data=code_data.iloc[1:]
+        # generate listed dictionary for sampled plates
+        f=dict()
+        for i,key_row in enumerate(code_data['Table 1'].tolist()):
+            for idx,value in enumerate(code_data.iloc[i][1:]):
+                f.update({key_row+str(idx+1):value})
+        thermocycler_values=pd.DataFrame(f,index=[0]).transpose()
 
-    # generate listed dictionary for sampled plates
-    f=dict()
-    for i,key_row in enumerate(code_data['Table 1'].tolist()):
-        for idx,value in enumerate(code_data.iloc[i][1:]):
-            f.update({key_row+str(idx+1):value})
-    thermocycler_values=pd.DataFrame(f,index=[0]).transpose()
+        # count number of declared elements in Dictionary to check with user declared values
+        num_samples_control = 0
+        for elem in f.values():
+            if elem != 0:
+                num_samples_control += 1
+        print('Num muestras test: '+str(num_samples_control))
 
-    # count number of declared elements in Dictionary to check with user declared values
-    num_samples_control = 0
-    for elem in f.values():
-        if elem != 0:
-            num_samples_control += 1
+
 
     # Get sample data from user
     control=False
