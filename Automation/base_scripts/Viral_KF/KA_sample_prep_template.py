@@ -10,7 +10,7 @@ import csv
 # metadata
 metadata = {
     'protocolName': 'S2 Station A Kingfisher Version 2',
-    'author': 'Malen Aguirregabiria, Aitor Gastaminza, Arkaitz Monteju & José Luis Villanueva (jlvillanueva@clinic.cat)',
+    'author': 'Hiart Maortua, Aitor Gastaminza, Arkaitz Monteju & José Luis Villanueva (jlvillanueva@clinic.cat)',
     'source': 'Hospital Clínic Barcelona, Hospital Universitario Cruces Bilbao',
     'apiLevel': '2.0',
     'description': 'Protocol for Kingfisher sample setup viral (A)'

@@ -12,7 +12,7 @@ import csv
 # metadata
 metadata = {
     'protocolName': 'Station C Kingfisher Pathogen qPCR setup Version 2',
-    'author': 'Malen Aguirregabiria, Aitor Gastaminza & José Luis Villanueva (jlvillanueva@clinic.cat)',
+    'author': 'Hiart Maortua, Malen Aguirregabiria, Aitor Gastaminza & José Luis Villanueva (jlvillanueva@clinic.cat)',
     'source': 'Hospital Clínic Barcelona, Hospital Universitario Cruces Bilbao',
     'apiLevel': '2.2',
     'description': 'Protocol for Kingfisher sample setup (C) - Pathogen Kit (ref 4462359) using CORE script'
@@ -92,9 +92,9 @@ def run(ctx: protocol_api.ProtocolContext):
         2: {'Execute': False, 'description': 'Transfer MMIX with P300'},
         3: {'Execute': True, 'description': 'Transfer MMIX with P20'},
         4: {'Execute': True, 'description': 'Transfer elution'},
-        5: {'Execute': True, 'description': 'Clean up NC and PC wells'},
-        6: {'Execute': True, 'description': 'Transfer PC'},
-        7: {'Execute': True, 'description': 'Transfer NC'}
+        5: {'Execute': False, 'description': 'Clean up NC and PC wells'},
+        6: {'Execute': False, 'description': 'Transfer PC'},
+        7: {'Execute': False, 'description': 'Transfer NC'}
     }
 
     if STEPS[2]['Execute']==True:
@@ -137,7 +137,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       rinse = False,
                       flow_rate_aspirate = 1,
                       flow_rate_dispense = 1,
-                      reagent_reservoir_volume = 2000, # volume_mmix_available,
+                      reagent_reservoir_volume = $MMIX_total_volume, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,

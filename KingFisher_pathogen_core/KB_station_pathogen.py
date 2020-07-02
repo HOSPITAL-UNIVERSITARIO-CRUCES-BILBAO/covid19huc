@@ -12,7 +12,7 @@ import csv
 # metadata
 metadata = {
     'protocolName': 'Kingfisher Viral Station',
-    'author': 'Aitor Gastaminza,  José Luis Villanueva & Eva González (jlvillanueva@clinic.cat)',
+    'author': 'Hiart Maortua, Aitor Gastaminza,  José Luis Villanueva & Eva González (jlvillanueva@clinic.cat)',
 'source': 'Hospital Clínic Barcelona, Hospital Cruces Bilbao',
     'apiLevel': '2.0',
     'description': 'Protocol to fill KingFisher Deepwell plates with reagents - Pathogen Kit (ref 4462359) using CORE script'
@@ -56,12 +56,13 @@ def run(ctx: protocol_api.ProtocolContext):
     STEPS = {  # Dictionary with STEP activation, description, and times
         1: {'Execute': True, 'description': 'Add 300 ul Wash Buffer 1'},
         2: {'Execute': True, 'description': 'Add 450 ul Wash Buffer 2'},
-        3: {'Execute': True, 'description': 'Add 90 ul Elution Buffer and wait'},
-        4: {'Execute': True, 'description': 'Add 10 ul IC'},
-        5: {'Execute': True, 'description': 'Add 260 ul Lysis Buffer'},
-        6: {'Execute': True, 'description': 'Mix beads'},
-        7: {'Execute': True, 'description': 'Wait for 10 minutes', 'wait_time': 600}, # 10 minutes of waiting
-        8: {'Execute': True, 'description': 'Add 260 ul Beads'}
+        3: {'Execute': True, 'description': 'Add 90 ul Elution Buffer and wait until plate arrives from A'},
+        4: {'Execute': False, 'description': 'Add 10 ul IC'},
+        5: {'Execute': True, 'description': 'Transfer 10ul ICtwo'},
+        6: {'Execute': True, 'description': 'Add 260 ul Lysis Buffer'},
+        7: {'Execute': True, 'description': 'Mix beads'},
+        8: {'Execute': True, 'description': 'Wait for 10 minutes', 'wait_time': 600}, # 10 minutes of waiting
+        9: {'Execute': True, 'description': 'Add 260 ul Beads'}
         }
 
     for s in STEPS:  # Create an empty wait_time
@@ -120,6 +121,16 @@ def run(ctx: protocol_api.ProtocolContext):
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
+    ICtwo = Reagent(name='Internal control 2',
+                    flow_rate_aspirate=1,
+                    flow_rate_dispense=3,
+                    rinse=False,
+                    num_wells=1,
+                    delay=2,
+                    reagent_reservoir_volume=63*8,#20 * NUM_SAMPLES * 1.1,
+                    h_cono=1,
+                    v_fondo=10)  # Prismatic
+
     Beads = Reagent(name='Magnetic beads',
                     flow_rate_aspirate=0.5,
                     flow_rate_dispense=0.5,
@@ -172,6 +183,7 @@ def run(ctx: protocol_api.ProtocolContext):
     IC.vol_well = IC.vol_well_original
     Lysis.vol_well = Lysis.vol_well_original
     ctx.comment(str(Beads.vol_well))
+    ICtwo.vol_well = ICtwo.vol_well_original
 
     ##################
     # Custom functions
@@ -304,10 +316,13 @@ def run(ctx: protocol_api.ProtocolContext):
 ####################################
     # load labware and modules
 
+    ic_reservoir = ctx.load_labware(
+        'nest_96_wellplate_100ul_pcr_full_skirt','5', 'Wellplate with Beads and IC')
+
     # 12 well rack
     ####################################
     ic_res = ctx.load_labware(
-        'nest_12_reservoir_15ml', '2', 'Reservoir 12 channel, column 1')
+        'nest_12_reservoir_15ml', '2', 'Reservoir 12 channel, column 1') # this resevoir does not contain IC anymore
 
     # Plate with samples
     ############################################
@@ -363,6 +378,9 @@ def run(ctx: protocol_api.ProtocolContext):
 
     WashBuffer1.reagent_reservoir = reagent_res.rows(
     )[0][9:] # position 3, 3 columns from 9 to 11
+
+    ICtwo.reagent_reservoir = ic_reservoir.rows(
+    )[0][:1] #position 1
 
     # columns in destination plates to be filled depending the number of samples
     wb1plate1_destination = WashBuffer1_100ul_plate1.rows()[0][:num_cols]
@@ -542,7 +560,37 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 5: Add Lysis
+    # STEP 5: TRANSFER IC2
+    ############################################################################
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        # Transfer parameters
+        start = datetime.now()
+        ctx.comment('###############################################')
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+        IC_transfer_vol = [ic_volume]
+        rinse = True
+        for i in range(num_cols):
+            if not m20.hw_pipette['has_tip']:
+                pick_up(m20)
+            for j, transfer_vol in enumerate(IC_transfer_vol):
+                move_vol_multichannel(m20, reagent=ICtwo, source=ICtwo.reagent_reservoir[IC.col],
+                                      dest=kf_destination[i], vol=transfer_vol,
+                                      air_gap_vol=air_gap_ic, x_offset=[0,0],
+                                      pickup_height=0.1, disp_height = -40.7,
+                                      rinse=ICtwo.rinse, blow_out = True, touch_tip=False, post_airgap=True)
+
+                m20.drop_tip(home_after=False)
+                tip_track['counts'][m20] += 8
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:'] = str(time_taken)
+    ############################################################################
+    # STEP 6: Add Lysis
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
@@ -586,7 +634,7 @@ def run(ctx: protocol_api.ProtocolContext):
         lysis_taken_time = time_taken.total_seconds()
 
     ############################################################################
-    # STEP 6: PREMIX BEADS
+    # STEP 7: PREMIX BEADS
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
@@ -616,7 +664,7 @@ def run(ctx: protocol_api.ProtocolContext):
         beads_premix_taken_time = time_taken.total_seconds()
 
     ############################################################################
-    # STEP 7: Wait time
+    # STEP 8: Wait time
     ############################################################################
 
     if (beads_premix_taken_time + lysis_taken_time) > 600:
@@ -640,7 +688,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:']=str(time_taken)
 
     ############################################################################
-    # STEP 8: Filling with Beads
+    # STEP 9: Filling with Beads
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:

@@ -12,7 +12,7 @@ import csv
 # metadata
 metadata = {
     'protocolName': 'Station C Kingfisher Pathogen qPCR setup Version 2',
-    'author': 'Malen Aguirregabiria, Aitor Gastaminza & José Luis Villanueva (jlvillanueva@clinic.cat)',
+    'author': 'Hiart Maortua, Aitor Gastaminza & José Luis Villanueva (jlvillanueva@clinic.cat)',
     'source': 'Hospital Clínic Barcelona, Hospital Universitario Cruces Bilbao',
     'apiLevel': '2.2',
     'description': 'Protocol for Kingfisher sample setup (C) - Viral Kit (ref ...) using CORE script'
@@ -136,7 +136,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       rinse = False,
                       flow_rate_aspirate = 2,
                       flow_rate_dispense = 4,
-                      eagent_reservoir_volume = volume_mmix_available, # volume_mmix_available,
+                      eagent_reservoir_volume = $MMIX_total_volume, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,

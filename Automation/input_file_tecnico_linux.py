@@ -40,17 +40,22 @@ pathogen_recipe={'Beads':[260,600],
 
 recipes={'V': viral_recipe, 'P': pathogen_recipe}
 
-main_path = '/home/laboratorio/Documentos/'
+user_path = '/home/laboratorio/'
+main_path = user_path +'Documentos/'
+desktop_path = user_path +'Escritorio/'
 code_path = main_path + 'covid19huc/Automation/base_scripts/'
 KFV_path = code_path + 'Viral_KF/'
 KFP_path = code_path + 'Pathogen_KF/'
-excel = main_path + 'covid19huc/Automation/base_scripts/Reference_template.xlsx'
+excel_path_recover = main_path + 'covid19huc/Automation/base_scripts/Reference_template.xlsx'
+excel_path = desktop_path + 'fill.xlsx'
+excel_path_test = main_path+'prueba.xlsx'
 
 # Function to distinguish between OT and KF protocols
 def select_protocol_type(p1, p2):
     ff=False
     while ff==False:
         protocol=input('Introducir protocolo: \nKingfisher VIRAL (V) o Kingfisher PATHOGEN (P) \nProtocolo: ')
+        protocol=protocol.upper()
         if protocol=='V':
             path=p1 # path
             ff=True
@@ -100,7 +105,7 @@ def update_files(final_path,filename,final_data,operation_data):
             data=data.replace('$'+key+'_total_volume',str(final_data[key][0]*final_data[key][1]))
             data=data.replace('$'+key+'_wells',str(final_data[key][1]))
         elif (key in data and key == 'MMIX'):
-            data=data.replace('$'+key,str(final_data[key][0]*final_data[key][1]))
+            data=data.replace('$'+key+'_total_volume',str(final_data[key][0]*final_data[key][1]))
 
 
     for key in operation_data.keys():
@@ -134,70 +139,70 @@ def update_readme(final_path,filename,protocol,imagepath,operation_data):
 
 ###############################################################################
 def main():
+    print('Demo mode: '+str(demo_mode))
     if demo_mode==False:
-        # Read the excel file from the run and obtain the dictionary of samples
-        excel = '/home/laboratorio/Escritorio/prueba.xlsx'
-        df = pd.read_excel (excel,
-         sheet_name='Deepwell layout', header = None, index_col = 0)
-        df = df.iloc[2:]
-        df_dict = df.to_dict('index')
-        merged_dict={}
-        for key in df_dict:
-            for key2 in df_dict[key]:
-                merged_dict[str(key)+format(key2)]=df_dict[key][key2]
-
-        # count number of declared elements in Dictionary
-        num_samples_control = 0
-        for elem in merged_dict.values():
-            if elem != 0:
-                num_samples_control += 1
-
-        # Get sample data from user
-        control=False
-        while control==False:
-            num_samples = int(input('Número de muestras a procesar (excluidos PC + NC): '))
-            if (num_samples>0 and num_samples<=94):
-                control=True
-            else:
-                print('Número de muestras debe ser un número entre 1 y 94 (2 son los controles)')
-                print('------------------------------------------------------------------------')
-        print('El número de muestras registradas en el excel es: '+str(num_samples_control))
-        if num_samples_control!=num_samples:
-            print('Error: El número de muestras entre excel y reportado no coincide, revisar por favor.')
-            exit()
-        else:
-            print('El número de muestras coincide')
-            print('------------------------------------------------------------------------')
-
-        # Get technician name
-        control=False
-        while control==False:
-            tec_name = '\''+(input('Nombre del técnico (usuario): '))+'\''
-            print('------------------------------------------------------------------------')
-            if isinstance(tec_name, str):
-                control=True
-            else:
-                print('Introduce tu usuario HUC, por favor')
-
-        # Get run session ID
-        control=False
-        while control==False:
-            id = int(input('ID run: '))
-            print('------------------------------------------------------------------------')
-            if isinstance(id,int):
-                control=True
-            else:
-                print('Por favor, assigna un ID numérico para este RUN')
+    # Read the excel file from the run and obtain the dictionary of samples
+        excel_path = '/Users/covid19warriors/Desktop/fill.xlsx'
     else:
-        # Get sample data from user
-        control=False
-        while control==False:
-            num_samples = int(input('Número de muestras a procesar (excluidos PC + NC): '))
-            if (num_samples>0 and num_samples<=94):
-                control=True
-        id=43001
-        excel = '/home/laboratorio/Escritorio/prueba.xlsx'
-        tec_name='demo'
+        excel_path = excel_path_test
+        print('Num muestras test: 24')
+
+    xls=pd.ExcelFile(excel_path)
+    code_data=pd.read_excel(xls,xls.sheet_names[2])
+    code_data=code_data.iloc[1:]
+
+    # generate listed dictionary for sampled plates
+    f=dict()
+    for i,key_row in enumerate(code_data['Table 1'].tolist()):
+        for idx,value in enumerate(code_data.iloc[i][1:]):
+            f.update({key_row+str(idx+1):value})
+    thermocycler_values=pd.DataFrame(f,index=[0]).transpose()
+
+    # count number of declared elements in Dictionary to check with user declared values
+    num_samples_control = 0
+    for elem in f.values():
+        if elem != 0:
+            num_samples_control += 1
+
+    # Get sample data from user
+    control=False
+    while control==False:
+        num_samples = int(input('Número de muestras a procesar (excluidos PC + NC): '))
+        if (num_samples>0 and num_samples<=94):
+            control=True
+        else:
+            print('Número de muestras debe ser un número entre 1 y 94 (no incluyas los controles)')
+            print('------------------------------------------------------------------------')
+    print('El número de muestras registradas en el excel es: '+str(num_samples_control))
+    if num_samples_control!=num_samples:
+        print('Error: El número de muestras entre excel y reportado no coincide, revisar por favor.')
+        exit()
+    else:
+        print('El número de muestras coincide')
+        print('------------------------------------------------------------------------')
+
+    # Get technician name
+    control=False
+    while control==False:
+        tec_name = '\''+(input('Nombre del técnico (usuario): '))+'\''
+        print('------------------------------------------------------------------------')
+        if isinstance(tec_name, str):
+            tec_name=tec_name.upper()
+            control=True
+        else:
+            print('Introduce tu usuario HUC, por favor')
+
+    # Get run session ID
+    control=False
+    while control==False:
+        id = (input('ID run: '))
+        print('------------------------------------------------------------------------')
+        try:
+            id=int(id)
+        except:
+            print('Por favor, assigna un ID numérico para este RUN')
+        if isinstance(id,int):
+            control=True
 
 
     # Get date
@@ -232,18 +237,21 @@ def main():
         os.mkdir(final_path)
         os.mkdir(final_path+'/scripts')
         os.mkdir(final_path+'/results')
+        thermocycler_values.to_excel(final_path+'/results/'+run_name+'_thermocycler.xlsx',index=True,header=False)
         os.mkdir(final_path+'/logs')
-        os.system('cp ' + excel +' '+ final_path+'/OT'+str(id)+'_samples.xlsx') # copy excel input file to destination
+        os.system('cp ' + excel_path +' '+ final_path+'/OT'+str(id)+'_samples.xlsx') # copy excel input file to destination
+        #reset desktop excel file
+        os.system('cp ' + excel_path_recover +' '+desktop_path+'fill.xlsx')
         if protocol == 'V':
             os.system('cp ' +main_path +'covid19huc/Automation/volumes_viral_readme.html' + ' ' + final_path + '/readme.html')
-            pV=generate_multi_well_viral(final_path,final_data)
-            mini_well=generate_multi_mini_well(final_path,final_data,protocol)
+            pV=generate_multi_well_viral(final_path+'/results',final_data)
+            mini_well=generate_multi_mini_well(final_path+'/results',final_data,protocol)
             update_readme(final_path,'readme.html',protocol,[pV,mini_well],operation_data)
         elif protocol == 'P':
             os.system('cp ' +main_path +'covid19huc/Automation/volumes_pathogen_readme.html' + ' ' + final_path + '/readme.html')
-            pB=generate_multi_well_pathogen_IC(final_path,final_data)
-            pR=generate_multi_well_pathogen_R(final_path,final_data)
-            mini_well=generate_multi_mini_well(final_path,final_data,protocol)
+            pB=generate_multi_well_pathogen_IC(final_path+'/results',final_data)
+            pR=generate_multi_well_pathogen_R(final_path+'/results',final_data)
+            mini_well=generate_multi_mini_well(final_path+'/results',final_data,protocol)
             update_readme(final_path,'readme.html',protocol,[pR,pB,mini_well],operation_data)
 
     else:

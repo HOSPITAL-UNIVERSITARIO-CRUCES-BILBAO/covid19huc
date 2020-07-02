@@ -27,7 +27,7 @@ metadata = {
 #Defined variables
 ##################
 
-NUM_SAMPLES = 48
+NUM_SAMPLES = 96
 air_gap_vol = 10
 air_gap_vol_elutionbuffer = 10
 run_id =  '43002'
@@ -52,9 +52,12 @@ def run(ctx: protocol_api.ProtocolContext):
         2: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'},
         3: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
         4: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1 and stop until plate comes from A'},
-        5: {'Execute': True, 'description': 'Transfer IC'},
-        6: {'Execute': True, 'description': 'Mix beads'},
-        7: {'Execute': True, 'description': 'Transfer beads'}
+        5: {'Execute': False, 'description': 'Transfer IC'},
+        6: {'Execute': True, 'description': 'Transfer ICtwo'},
+        7: {'Execute': False, 'description': 'Mix beads'},
+        8: {'Execute': False, 'description': 'Transfer beads'},
+        9: {'Execute': True, 'description': 'Mix beadstwo'},
+        10: {'Execute': True, 'description': 'Transfer beadstwo'}
         }
 
     for s in STEPS:  # Create an empty wait_time
@@ -70,7 +73,7 @@ def run(ctx: protocol_api.ProtocolContext):
     class Reagent:
         def __init__(self, name, flow_rate_aspirate, flow_rate_dispense, rinse,
                      reagent_reservoir_volume, delay, num_wells, h_cono, v_fondo,
-                      tip_recycling = 'none', rinse_loops = 3, flow_rate_dispense_mix = 2, flow_rate_aspirate_mix = 2):
+                      tip_recycling = 'none', rinse_loops = 3, flow_rate_dispense_mix = 4, flow_rate_aspirate_mix = 4):
 
             self.name = name
             self.flow_rate_aspirate = flow_rate_aspirate
@@ -96,7 +99,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_aspirate=0.75,
                           flow_rate_dispense=1,
                           rinse=True,
-                          delay=2,
+                          delay=3,
                           reagent_reservoir_volume=5400, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
@@ -106,7 +109,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_aspirate=0.75,
                           flow_rate_dispense=1,
                           rinse=True,
-                          delay=2,
+                          delay=3,
                           reagent_reservoir_volume=5400, #100*NUM_SAMPLES,
                           num_wells=1,
                           h_cono=1.95,
@@ -133,7 +136,7 @@ def run(ctx: protocol_api.ProtocolContext):
                             h_cono=1.95,
                             v_fondo=695)  # Prismatic
 
-    IC = Reagent(name='Magnetic beads and Lysis',
+    IC = Reagent(name='Internal control',
                     flow_rate_aspirate=1,
                     flow_rate_dispense=3,
                     rinse=False,
@@ -143,17 +146,37 @@ def run(ctx: protocol_api.ProtocolContext):
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
-    Beads = Reagent(name='Magnetic beads and Lysis',
+    ICtwo = Reagent(name='Internal control 2',
+                    flow_rate_aspirate=1,
+                    flow_rate_dispense=3,
+                    rinse=False,
+                    num_wells=1,
+                    delay=2,
+                    reagent_reservoir_volume=63*8,#20 * NUM_SAMPLES * 1.1,
+                    h_cono=1,
+                    v_fondo=10)  # Prismatic
+
+    Beads = Reagent(name='Magnetic beads',
                     flow_rate_aspirate=0.5,
                     flow_rate_dispense=0.5,
                     rinse=True,
                     rinse_loops=4,
                     num_wells=1,
-                    delay=2,
+                    delay=3,
                     reagent_reservoir_volume=1800,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
+    Beadstwo = Reagent(name='Magnetic beads 2',
+                    flow_rate_aspirate=0.5,
+                    flow_rate_dispense=0.5,
+                    rinse=True,
+                    rinse_loops=4,
+                    num_wells=2,
+                    delay=3,
+                    reagent_reservoir_volume=250*8,#20 * NUM_SAMPLES * 1.1,
+                    h_cono=1.95,
+                    v_fondo=695)  # Prismatic
 
     Beads.vol_well = Beads.vol_well_original
     IC.vol_well = IC.vol_well_original
@@ -161,6 +184,8 @@ def run(ctx: protocol_api.ProtocolContext):
     WashBuffer2.vol_well = WashBuffer2.vol_well_original
     ElutionBuffer.vol_well = ElutionBuffer.vol_well_original
     Lysis.vol_well = Lysis.vol_well_original
+    Beadstwo.vol_well = Beadstwo.vol_well_original
+    ICtwo.vol_well = ICtwo.vol_well_original
 
     ##################
     # Custom functions
@@ -288,6 +313,12 @@ def run(ctx: protocol_api.ProtocolContext):
 ####################################
     # load labware and modules
 
+    # IC well rack
+    ####################################
+    #tempdeck = ctx.load_module('tempdeck', '3')
+    ic_reservoir = ctx.load_labware(
+        'nest_96_wellplate_100ul_pcr_full_skirt','3', 'Wellplate with Beads and IC')
+
     # 12 well rack
     ####################################
     reagent_res = ctx.load_labware(
@@ -306,7 +337,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Lysis buffer 100ul Deepwell plate and later will be the plate with samples
     ############################################
     kf_plate = ctx.load_labware(
-        'kf_96_wellplate_2400ul', '2', 'Lysis buffer Deepwell plate 1')
+        'kf_96_wellplate_2400ul', '2', 'Sample Deepwell plate 1')
 
     # Elution Deepwell plate
     ############################################
@@ -319,7 +350,7 @@ def run(ctx: protocol_api.ProtocolContext):
     tips300 = [ctx.load_labware('opentrons_96_tiprack_300ul', slot, '200µl filter tiprack')
                for slot in ['8']]
     tips20 = [ctx.load_labware('opentrons_96_filtertiprack_20ul', slot, '20µl filter tiprack')
-               for slot in ['6']]
+               for slot in ['6','9']]
 
 ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
@@ -340,6 +371,12 @@ def run(ctx: protocol_api.ProtocolContext):
 
     Beads.reagent_reservoir = reagent_res.rows(
     )[0][11:] #position 4
+
+    ICtwo.reagent_reservoir = ic_reservoir.rows(
+    )[0][:1] #position 1
+
+    Beadstwo.reagent_reservoir = ic_reservoir.rows(
+    )[0][1:3] #position 2 to 3
 
     # columns in destination plates to be filled depending the number of samples
     wb1plate1_destination = WashBuffer1_100ul_plate1.rows()[0][:num_cols]
@@ -401,7 +438,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 2 Transfer Elution buffer
+    # STEP 2: Transfer Elution buffer
     ############################################################################
 
     STEP += 1
@@ -539,7 +576,38 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 6: PREMIX BEADS
+    # STEP 6: TRANSFER IC2
+    ############################################################################
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        # Transfer parameters
+        start = datetime.now()
+        ctx.comment('###############################################')
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+        IC_transfer_vol = [ic_vol]
+        rinse = True
+        for i in range(num_cols):
+            if not m20.hw_pipette['has_tip']:
+                pick_up(m20)
+            for j, transfer_vol in enumerate(IC_transfer_vol):
+                move_vol_multichannel(m20, reagent=ICtwo, source=ICtwo.reagent_reservoir[IC.col],
+                                      dest=kf_destination[i], vol=transfer_vol,
+                                      air_gap_vol=air_gap_ic, x_offset=[0,0],
+                                      pickup_height=0.1, disp_height = -40.7,
+                                      rinse=ICtwo.rinse, blow_out = True, touch_tip=False, post_airgap=True)
+
+                m20.drop_tip(home_after=False)
+                tip_track['counts'][m20] += 8
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+    ############################################################################
+    # STEP 7: PREMIX BEADS
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
@@ -566,7 +634,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 7: TRANSFER BEADS
+    # STEP 8: TRANSFER BEADS
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
@@ -599,6 +667,91 @@ def run(ctx: protocol_api.ProtocolContext):
                     'Aspirate from reservoir column: ' + str(Beads.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 move_vol_multichannel(m300, reagent=Beads, source=Beads.reagent_reservoir[Beads.col],
+                                      dest=kf_destination[i], vol=transfer_vol,
+                                      air_gap_vol=air_gap_vol, x_offset=x_offset,
+                                      pickup_height=0.2, disp_height = -8,
+                                      rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
+
+                '''custom_mix(m300, Beads, work_destinations_cols[i] ,
+                                   vol=70, rounds=10, blow_out=True, mix_height=8,
+                                   x_offset = x_offset, source_height=0.5, post_dispense=True)
+                   m300.drop_tip(home_after=False)
+
+                                   '''
+
+
+        m300.drop_tip(home_after=False)
+        tip_track['counts'][m300] += 8
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+
+    ############################################################################
+    # STEP 9: PREMIX BEADStwo
+    ############################################################################
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+
+        start = datetime.now()
+        ctx.comment('###############################################')
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+        if not m300.hw_pipette['has_tip']:
+            pick_up(m300)
+            ctx.comment('Tip picked up')
+        ctx.comment('Mixing ' + Beadstwo.name)
+
+        # Mixing
+        custom_mix(m300, Beadstwo, Beadstwo.reagent_reservoir[Beadstwo.col], vol=100,
+                   rounds=10, blow_out=True, mix_height=5, post_dispense=True, source_height=0.3)
+        ctx.comment('Finished premixing!')
+        ctx.comment('Now, reagents will be transferred to deepwell plate.')
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+    ############################################################################
+    # STEP 10: TRANSFER BEADStwo
+    ############################################################################
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        # Transfer parameters
+        start = datetime.now()
+        ctx.comment('###############################################')
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+        beads_transfer_vol = [beads_vol]  # Two rounds of 130
+        rinse = True
+        for i in range(num_cols):
+            if not m300.hw_pipette['has_tip']:
+                pick_up(m300)
+            for j, transfer_vol in enumerate(beads_transfer_vol):
+                if (i == 0 and j == 0):
+                    rinse = True
+                else:
+                    rinse = False
+                # Calculate pickup_height based on remaining volume and shape of container
+                [pickup_height, change_col] = calc_height(
+                    reagent = Beadstwo, cross_section_area = 15,
+                    aspirate_volume = transfer_vol * 8, min_height=0.3, extra_volume=0)
+                if change_col == True:  # If we switch column because there is not enough volume left in current reservoir column we mix new column
+                    ctx.comment(
+                        'Mixing new reservoir column: ' + str(Beadstwo.col))
+                    custom_mix(m300, Beadstwo, Beadstwo.reagent_reservoir[Beadstwo.col],
+                               vol=100, rounds=10, blow_out=True, mix_height=1,
+                               post_dispense=True)
+                pickup_height=0.1
+                ctx.comment(
+                    'Aspirate from reservoir column: ' + str(Beadstwo.col))
+                ctx.comment('Pickup height is ' + str(pickup_height))
+                move_vol_multichannel(m300, reagent=Beadstwo, source=Beadstwo.reagent_reservoir[Beadstwo.col],
                                       dest=kf_destination[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
                                       pickup_height=0.2, disp_height = -8,

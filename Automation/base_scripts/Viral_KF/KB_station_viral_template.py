@@ -12,7 +12,7 @@ import csv
 # metadata
 metadata = {
     'protocolName': 'Kingfisher Viral Station',
-    'author': 'Aitor Gastaminza,  José Luis Villanueva & Eva González (jlvillanueva@clinic.cat)',
+    'author': 'Hiart Maortua, Aitor Gastaminza,  José Luis Villanueva & Eva González (jlvillanueva@clinic.cat)',
 'source': 'Hospital Clínic Barcelona, Hospital Cruces Bilbao',
     'apiLevel': '2.0',
     'description': 'Protocol to fill KingFisher Deepwell plates with reagents - Viral Kit (ref ...)'
@@ -99,7 +99,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_aspirate=0.75,
                           flow_rate_dispense=1,
                           rinse=True,
-                          delay=2,
+                          delay=3,
                           reagent_reservoir_volume=$Wone_total_volume, #100*NUM_SAMPLES,
                           num_wells=$Wone_wells,
                           h_cono=1.95,
@@ -109,7 +109,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_aspirate=0.75,
                           flow_rate_dispense=1,
                           rinse=True,
-                          delay=2,
+                          delay=3,
                           reagent_reservoir_volume=$Wtwo_total_volume, #100*NUM_SAMPLES,
                           num_wells=$Wtwo_wells,
                           h_cono=1.95,
@@ -152,7 +152,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse=False,
                     num_wells=1,
                     delay=2,
-                    reagent_reservoir_volume=63*8,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=$IC_total_volume,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1,
                     v_fondo=10)  # Prismatic
 
@@ -162,7 +162,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse=True,
                     rinse_loops=4,
                     num_wells=$Beads_wells,
-                    delay=2,
+                    delay=3,
                     reagent_reservoir_volume=$Beads_total_volume,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
@@ -173,8 +173,8 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse=True,
                     rinse_loops=4,
                     num_wells=2,
-                    delay=2,
-                    reagent_reservoir_volume=250*8,#20 * NUM_SAMPLES * 1.1,
+                    delay=3,
+                    reagent_reservoir_volume=$Beads_total_volume,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
@@ -315,7 +315,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     # IC well rack
     ####################################
-    tempdeck = ctx.load_module('tempdeck', '3')
+    #tempdeck = ctx.load_module('tempdeck', '3')
     ic_reservoir = ctx.load_labware(
         'nest_96_wellplate_100ul_pcr_full_skirt','3', 'Wellplate with Beads and IC')
 
