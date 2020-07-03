@@ -251,7 +251,10 @@ def main():
                 '$hora': str(h_registro), '$dia': str(dia_registro),
                 '$num_s_corrected': str(num_samples_c),
                 '$num_cols': str(num_cols),
-                '$MMIX': str(final_data['MMIX'][0])
+                '$MMIX': str(final_data['MMIX'][0]),
+                '$Taqpath': str(final_data['Taqpath'][0]),
+                '$Assay': str(final_data['Assay'][0]),
+                '$Water': str(final_data['Water'][0])
                 }
 
     #determine output path
