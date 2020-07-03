@@ -27,7 +27,7 @@ metadata = {
 #Defined variables
 ##################
 
-NUM_SAMPLES = 96
+NUM_SAMPLES = $num_samples
 air_gap_vol = 10
 air_gap_ic = 2
 air_gap_vol_elutionbuffer = 10
@@ -42,7 +42,7 @@ pipette_allowed_capacity = 180
 max_multiwell_volume = 13300
 
 
-run_id =  '$run_id'
+run_id =  $run_id
 
 x_offset = [0,0]
 multi_well_rack_area = 8.2 * 71.2  # Cross section of the 12 well reservoir
@@ -58,7 +58,7 @@ def run(ctx: protocol_api.ProtocolContext):
         2: {'Execute': True, 'description': 'Add 450 ul Wash Buffer 2'},
         3: {'Execute': True, 'description': 'Add 90 ul Elution Buffer and wait until plate arrives from A'},
         4: {'Execute': False, 'description': 'Add 10 ul IC'},
-        5: {'Execute': True, 'description': 'Transfer 10ul ICtwo'},
+        5: {'Execute': True, 'description': 'Transfer 10ul ICtwo'}, # comes from 100ul well, better option than the 12 multi well
         6: {'Execute': True, 'description': 'Add 260 ul Lysis Buffer'},
         7: {'Execute': True, 'description': 'Mix beads'},
         8: {'Execute': True, 'description': 'Wait for 10 minutes', 'wait_time': 600}, # 10 minutes of waiting

@@ -17,7 +17,7 @@ from multi_well_pathogen_IC import generate_multi_well_pathogen_IC
 from multi_well_pathogen_R import generate_multi_well_pathogen_R
 from multi_mini_well import generate_multi_mini_well
 
-demo_mode=False
+demo_mode=True
 
 # recipes for protocol types [obj. volume per well, allowable remaining nonusable volume in channel]
 viral_recipe={'Beads':[20,3],

@@ -174,7 +174,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse_loops=4,
                     num_wells=2,
                     delay=3,
-                    reagent_reservoir_volume=250*8,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=250,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1.95,
                     v_fondo=695)  # Prismatic
 
@@ -740,7 +740,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 # Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(
                     reagent = Beadstwo, cross_section_area = 15,
-                    aspirate_volume = transfer_vol * 8, min_height=0.3, extra_volume=0)
+                    aspirate_volume = transfer_vol, min_height=0.3, extra_volume=0) # only 1 well is considered as pvolume parameter only refers to first well
                 if change_col == True:  # If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment(
                         'Mixing new reservoir column: ' + str(Beadstwo.col))
@@ -754,7 +754,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent=Beadstwo, source=Beadstwo.reagent_reservoir[Beadstwo.col],
                                       dest=kf_destination[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=0.2, disp_height = -8,
+                                      pickup_height=0.3, disp_height = -8,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 '''custom_mix(m300, Beads, work_destinations_cols[i] ,

@@ -37,11 +37,11 @@ size_transfer = 4  # Number of wells the distribute function will fill. Deprecat
 volume_sample = 5  # Volume of the sample
 volume_pc = 20
 volume_nc = 20
-volume_mmix_available = 50*20 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
+#volume_mmix_available = 50*20 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
-diameter_screwcap = 8.25  # Diameter of the screwcap
+diameter_screwcap = 8.5  # Diameter of the screwcap
 temperature = 8  # Temperature of temp module
-volume_cone = 50  # Volume in ul that fit in the screwcap cone
+volume_cone = 60  # Volume in ul that fit in the screwcap cone
 tube_type='screwcap_2ml' #'eppendorf_1.5ml'
 x_offset = [0,0]
 pipette_allowed_capacity=180
@@ -90,8 +90,8 @@ def run(ctx: protocol_api.ProtocolContext):
         1: {'Execute': False, 'description': 'Make MMIX'},
         2: {'Execute': False, 'description': 'Transfer MMIX with P300'},
         3: {'Execute': True, 'description': 'Transfer MMIX with P20'},
-        4: {'Execute': True, 'description': 'Transfer elution'},
-        5: {'Execute': False, 'description': 'Clean up NC and PC wells'},
+        4: {'Execute': False, 'description': 'Clean up NC and PC wells'},
+        5: {'Execute': True, 'description': 'Transfer elution'},
         6: {'Execute': False, 'description': 'Transfer PC'},
         7: {'Execute': False, 'description': 'Transfer NC'}
     }
@@ -136,7 +136,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       rinse = False,
                       flow_rate_aspirate = 2,
                       flow_rate_dispense = 4,
-                      eagent_reservoir_volume = $MMIX_total_volume, # volume_mmix_available,
+                      reagent_reservoir_volume = $MMIX_total_volume, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,
@@ -622,13 +622,41 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
+        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,1,0)
         ctx.pause('Put samples please')
         tempdeck.deactivate()
 
     ############################################################################
-    # STEP 3: TRANSFER Samples
+    # STEP 3: Clean up PC and NC well
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
+        clean_up_wells=[pc_well,nc_well]
+        for src in clean_up_wells:
+            p20.pick_up_tip()
+
+            p20.aspirate(20,src)
+            p20.dispense(ctx.waster)
+        p20.drop_tip()
+        tip_track['counts'][p20]+=1
+        #MMIX.unused_two = MMIX.vol_well
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('#######################################################')
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        ctx.comment('#######################################################')
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+
+    ############################################################################
+    # STEP 4: TRANSFER Samples
+    ############################################################################
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,0,0)
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
@@ -653,31 +681,10 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
 
-    ############################################################################
-    # STEP 5: Clean up PC and NC well
-    ############################################################################
-    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        start = datetime.now()
-        clean_up_wells=[pc_well,nc_well]
-        for src in clean_up_wells:
-            p20.pick_up_tip()
-            p20.aspirate(20,src)
-            p20.drop_tip()
-            tip_track['counts'][p20]+=1
-        #MMIX.unused_two = MMIX.vol_well
 
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('#######################################################')
-        ctx.comment('Step ' + str(STEP) + ': ' +
-                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
-        ctx.comment('#######################################################')
-        STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 6: Transfer PC with P20
+    # STEP 5: Transfer PC with P20
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     STEP += 1
@@ -705,7 +712,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 7: Transfer NC with P20
+    # STEP 6: Transfer NC with P20
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     STEP += 1
@@ -732,6 +739,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
 
+
     ############################################################################
     # Export the time log to a tsv file
     if not ctx.is_simulating():
@@ -746,7 +754,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
-
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(0,1,0)
     time.sleep(2)
     import os
     #os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')

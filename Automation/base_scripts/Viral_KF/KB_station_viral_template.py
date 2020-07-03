@@ -45,6 +45,7 @@ num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: ' + str(num_cols))
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,0,0)
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
@@ -430,6 +431,7 @@ def run(ctx: protocol_api.ProtocolContext):
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
         ctx.comment('Remove Lysis buffer from plate 2')
+        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,1,0)
         ctx.pause('Take plate in 2 to station A and click continue')
         end = datetime.now()
         time_taken = (end - start)
@@ -537,6 +539,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                blow_out = True, touch_tip = False, post_airgap=True)
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
+        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,1,0)
         ctx.pause('Bring plate from A in position 2 and click continue')
         end = datetime.now()
         time_taken = (end - start)
@@ -594,7 +597,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m20, reagent=ICtwo, source=ICtwo.reagent_reservoir[IC.col],
                                       dest=kf_destination[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_ic, x_offset=[0,0],
-                                      pickup_height=0.1, disp_height = -40.7,
+                                      pickup_height=0.2, disp_height = -40.7,
                                       rinse=ICtwo.rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 m20.drop_tip(home_after=False)
@@ -740,7 +743,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 # Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(
                     reagent = Beadstwo, cross_section_area = 15,
-                    aspirate_volume = transfer_vol * 8, min_height=0.3, extra_volume=0)
+                    aspirate_volume = transfer_vol , min_height=0.3, extra_volume=0) # I will consider only aspiration from one well
                 if change_col == True:  # If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment(
                         'Mixing new reservoir column: ' + str(Beadstwo.col))
@@ -754,7 +757,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent=Beadstwo, source=Beadstwo.reagent_reservoir[Beadstwo.col],
                                       dest=kf_destination[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=0.2, disp_height = -8,
+                                      pickup_height=0.3, disp_height = -8,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 '''custom_mix(m300, Beads, work_destinations_cols[i] ,

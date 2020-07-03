@@ -47,6 +47,7 @@ screwcap_cross_section_area = math.pi * \
 
 def run(ctx: protocol_api.ProtocolContext):
     import os
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,0,0)
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
@@ -396,7 +397,7 @@ def run(ctx: protocol_api.ProtocolContext):
             #custom_mix(p20, reagent = Samples, location = d, vol = 10, rounds = 2,
             #blow_out = True, mix_height = 2, x_offset = x_offset)
             # Drop tip and update counter
-            p20.drop_tip()
+            p20.drop_tip(home_after=False)
         tip_track['counts'][p20] += 1
 
         # Time statistics
@@ -424,12 +425,11 @@ def run(ctx: protocol_api.ProtocolContext):
 
     #if not ctx.is_simulating():
         #os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(0,1,0)
     for i in range(3):
         ctx._hw_manager.hardware.set_lights(rails=False)
-        #ctx._hw_manager.hardware.set_button_light(1,0,0)
         time.sleep(0.3)
         ctx._hw_manager.hardware.set_lights(rails=True)
-        #ctx._hw_manager.hardware.set_button_light(0,0,1)
         time.sleep(0.3)
         ctx._hw_manager.hardware.set_lights(rails=False)
     #ctx._hw_manager.hardware.set_button_light(0,1,0)

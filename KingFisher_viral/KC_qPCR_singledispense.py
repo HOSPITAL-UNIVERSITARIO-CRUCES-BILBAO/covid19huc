@@ -24,7 +24,7 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 48
+NUM_SAMPLES = 94
 NUM_SAMPLES = NUM_SAMPLES + 2 # MMIX for PC and NC
 
 air_gap_vol = 20
@@ -39,9 +39,9 @@ volume_pc = 20
 volume_nc = 20
 volume_mmix_available = 50*20 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
-diameter_screwcap = 8.25  # Diameter of the screwcap
+diameter_screwcap = 8.5  # Diameter of the screwcap
 temperature = 8  # Temperature of temp module
-volume_cone = 50  # Volume in ul that fit in the screwcap cone
+volume_cone = 60  # Volume in ul that fit in the screwcap cone
 tube_type='screwcap_2ml' #'eppendorf_1.5ml'
 x_offset = [0,0]
 pipette_allowed_capacity=180
@@ -90,8 +90,8 @@ def run(ctx: protocol_api.ProtocolContext):
         1: {'Execute': False, 'description': 'Make MMIX'},
         2: {'Execute': False, 'description': 'Transfer MMIX with P300'},
         3: {'Execute': True, 'description': 'Transfer MMIX with P20'},
-        4: {'Execute': True, 'description': 'Transfer elution'},
-        5: {'Execute': False, 'description': 'Clean up NC and PC wells'},
+        4: {'Execute': True, 'description': 'Clean up NC and PC wells'},
+        5: {'Execute': True, 'description': 'Transfer elution'},
         6: {'Execute': False, 'description': 'Transfer PC'},
         7: {'Execute': False, 'description': 'Transfer NC'}
     }
@@ -136,7 +136,7 @@ def run(ctx: protocol_api.ProtocolContext):
                       rinse = False,
                       flow_rate_aspirate = 2,
                       flow_rate_dispense = 4,
-                      reagent_reservoir_volume = 1000, # volume_mmix_available,
+                      reagent_reservoir_volume = 2010, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
                       h_cono = h_cone,
@@ -424,6 +424,8 @@ def run(ctx: protocol_api.ProtocolContext):
         'opentrons_24_aluminumblock_generic_2ml_screwcap', '1',
         'Bloque Aluminio opentrons 24 screwcaps 2000 µL ')
 
+    trash = ctx.load_labware('agilent_1_reservoir_290ml','12', 'trash').wells()[0]
+
     ############################################
     # tempdeck
     tempdeck = ctx.load_module('tempdeck', '4')
@@ -439,7 +441,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # Sample plate - comes from B
     source_plate = ctx.load_labware(
         "kingfisher_std_96_wellplate_550ul", '2',
-        'chilled KF plate with elutions (alum opentrons)')
+        'KF plate with elutions')
     samples = source_plate.wells()[:NUM_SAMPLES]
 
     ##################################
@@ -493,6 +495,8 @@ def run(ctx: protocol_api.ProtocolContext):
     pcr_wells_multi = qpcr_plate.rows()[0][:num_cols]
     pc_well = qpcr_plate.wells()[(NUM_SAMPLES-2):(NUM_SAMPLES-1)][0]
     nc_well = qpcr_plate.wells()[(NUM_SAMPLES-1):(NUM_SAMPLES)][0]
+    pc_well_clean = source_plate.wells()[(NUM_SAMPLES-2):(NUM_SAMPLES-1)][0]
+    nc_well_clean = source_plate.wells()[(NUM_SAMPLES-1):(NUM_SAMPLES)][0]
     # Divide destination wells in small groups for P300 pipette
     dests = list(divide_destinations(pcr_wells, size_transfer))
 
@@ -623,10 +627,33 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
         ctx.pause('Put samples please')
-        tempdeck.deactivate()
 
     ############################################################################
-    # STEP 3: TRANSFER Samples
+    # STEP 4: Clean up PC and NC well
+    ############################################################################
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
+        clean_up_wells=[pc_well_clean,nc_well_clean]
+        p20.pick_up_tip()
+        for src in clean_up_wells:
+            for vol in range(3):
+                p20.aspirate(20,src)
+                p20.dispense(20,trash)
+        p20.drop_tip()
+        tip_track['counts'][p20]+=1
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('#######################################################')
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        ctx.comment('#######################################################')
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+    ############################################################################
+    # STEP 5: TRANSFER Samples
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     STEP += 1
@@ -652,29 +679,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
-
-    ############################################################################
-    # STEP 5: Clean up PC and NC well
-    ############################################################################
-    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        start = datetime.now()
-        clean_up_wells=[pc_well,nc_well]
-        for src in clean_up_wells:
-            p20.pick_up_tip()
-            p20.aspirate(20,src)
-            p20.drop_tip()
-            tip_track['counts'][p20]+=1
-        #MMIX.unused_two = MMIX.vol_well
-
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('#######################################################')
-        ctx.comment('Step ' + str(STEP) + ': ' +
-                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
-        ctx.comment('#######################################################')
-        STEPS[STEP]['Time:'] = str(time_taken)
+        tempdeck.deactivate()
 
     ############################################################################
     # STEP 6: Transfer PC with P20

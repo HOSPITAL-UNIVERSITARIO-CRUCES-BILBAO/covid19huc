@@ -58,7 +58,7 @@ def run(ctx: protocol_api.ProtocolContext):
         2: {'Execute': True, 'description': 'Add 450 ul Wash Buffer 2'},
         3: {'Execute': True, 'description': 'Add 90 ul Elution Buffer and wait until plate arrives from A'},
         4: {'Execute': False, 'description': 'Add 10 ul IC'},
-        5: {'Execute': True, 'description': 'Transfer 10ul ICtwo'},
+        5: {'Execute': True, 'description': 'Transfer 10ul ICtwo'}, # comes from 100ul well, better option than the 12 multi well
         6: {'Execute': True, 'description': 'Add 260 ul Lysis Buffer'},
         7: {'Execute': True, 'description': 'Mix beads'},
         8: {'Execute': True, 'description': 'Wait for 10 minutes', 'wait_time': 600}, # 10 minutes of waiting
@@ -127,7 +127,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     rinse=False,
                     num_wells=1,
                     delay=2,
-                    reagent_reservoir_volume=63*8,#20 * NUM_SAMPLES * 1.1,
+                    reagent_reservoir_volume=63,#20 * NUM_SAMPLES * 1.1,
                     h_cono=1,
                     v_fondo=10)  # Prismatic
 
