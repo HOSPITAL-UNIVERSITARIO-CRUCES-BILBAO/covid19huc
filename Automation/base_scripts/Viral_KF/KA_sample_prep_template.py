@@ -362,7 +362,7 @@ def run(ctx: protocol_api.ProtocolContext):
             # Mix the sample AFTER dispensing
             #custom_mix(p300, reagent = Samples, location = d, vol = volume_sample, rounds = 2, blow_out = True, mix_height = 15)
             # Drop tip and update counter
-            p300.drop_tip()
+            p300.drop_tip(home_after=False)
             tip_track['counts'][p300] += 1
 
         # Time statistics

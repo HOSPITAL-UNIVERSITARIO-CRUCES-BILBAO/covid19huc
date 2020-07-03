@@ -41,15 +41,15 @@ pathogen_recipe={'Beads':[260,600],
 recipes={'V': viral_recipe, 'P': pathogen_recipe}
 
 user_path =  os.environ['USERPROFILE']
-main_path = user_path +'\\Documents\\Github'
+main_path = user_path +'\\Documents'
 desktop_path = user_path +'\\Desktop'
 
 
 
-code_path = main_path + '\\covid19huc\\Automation\\base_scripts'
+code_path = main_path + '\\Github\\covid19huc\\Automation\\base_scripts'
 KFV_path = code_path + '\\Viral_KF'
 KFP_path = code_path + '\\Pathogen_KF'
-excel_path_recover = main_path + '\\covid19huc\\Automation\\base_scripts\\Reference_template.xlsx'
+excel_path_recover = main_path + '\\Github\\covid19huc\\Automation\\base_scripts\\Reference_template.xlsx'
 excel_path = desktop_path + '\\fill.xlsx'
 excel_path_test = main_path+'\\prueba.xlsx'
 
@@ -262,14 +262,14 @@ def main():
         os.makedirs(final_path+'\\logs')
         os.system('copy ' + excel_path +' '+ final_path+'\\OT'+str(id)+'_samples.xlsx') # copy excel input file to destination
         #reset desktop excel file
-        os.system('copy ' + excel_path_recover +' '+desktop_path+'fill.xlsx')
+        os.system('copy /y ' + excel_path_recover +' '+desktop_path+'fill.xlsx')
         if protocol == 'V':
-            os.system('copy ' +main_path +'\\covid19huc\\Automation\\volumes_viral_readme_windows.html' + ' ' + final_path + '\\readme.html')
+            os.system('copy ' +main_path +'\\Github\\covid19huc\\Automation\\volumes_viral_readme_windows.html' + ' ' + final_path + '\\readme.html')
             pV=generate_multi_well_viral(final_path+'\\results',final_data)
             mini_well=generate_multi_mini_well(final_path+'\\results',final_data,protocol)
             update_readme(final_path,'readme.html',protocol,[pV,mini_well],operation_data)
         elif protocol == 'P':
-            os.system('copy ' +main_path +'\\covid19huc\\Automation\\volumes_pathogen_readme_windows.html' + ' ' + final_path + '\\readme.html')
+            os.system('copy ' +main_path +'\\Github\\covid19huc\\Automation\\volumes_pathogen_readme_windows.html' + ' ' + final_path + '\\readme.html')
             pB=generate_multi_well_pathogen_IC(final_path+'\\results',final_data)
             pR=generate_multi_well_pathogen_R(final_path+'\\results',final_data)
             mini_well=generate_multi_mini_well(final_path+'\\results',final_data,protocol)
