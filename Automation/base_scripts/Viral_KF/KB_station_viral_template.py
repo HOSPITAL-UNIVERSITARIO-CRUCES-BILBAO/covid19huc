@@ -746,20 +746,21 @@ def run(ctx: protocol_api.ProtocolContext):
                 [pickup_height, change_col] = calc_height(
                     reagent = Beadstwo, cross_section_area = 15,
                     aspirate_volume = transfer_vol , min_height=0.7, extra_volume=0) # I will consider only aspiration from one well
+                pickup_height=0.7
                 if change_col == True:  # If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment(
                         'Mixing new reservoir column: ' + str(Beadstwo.col))
                     custom_mix(m300, Beadstwo, Beadstwo.reagent_reservoir[Beadstwo.col],
-                               vol=100, rounds=10, blow_out=True, mix_height=7,
+                               vol=100, rounds=10, blow_out=True, mix_height=0.7,
                                post_dispense=True)
-                pickup_height=0.5
+
                 ctx.comment(
                     'Aspirate from reservoir column: ' + str(Beadstwo.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 move_vol_multichannel(m300, reagent=Beadstwo, source=Beadstwo.reagent_reservoir[Beadstwo.col],
                                       dest=kf_destination[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=0.7, disp_height = -8,
+                                      pickup_height=pickup_height, disp_height = -8,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 '''custom_mix(m300, Beads, work_destinations_cols[i] ,
