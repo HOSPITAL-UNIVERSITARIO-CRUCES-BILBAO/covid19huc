@@ -427,6 +427,10 @@ def run(ctx: protocol_api.ProtocolContext):
         'Bloque Aluminio opentrons 24 screwcaps 2000 µL ')
 
     ############################################
+
+    trash = ctx.load_labware('agilent_1_reservoir_290ml','12', 'trash').wells()[0]
+
+
     # tempdeck
     tempdeck = ctx.load_module('tempdeck', '4')
     tempdeck.set_temperature(temperature)
@@ -668,7 +672,7 @@ def run(ctx: protocol_api.ProtocolContext):
         for src in clean_up_wells:
             for i in range(3):
                 p20.aspirate(20,src)
-                p20.dispense(ctx.waste)
+                p20.dispense(20,trash)
         p20.drop_tip()
         tip_track['counts'][p20]+=1
         #MMIX.unused_two = MMIX.vol_well
