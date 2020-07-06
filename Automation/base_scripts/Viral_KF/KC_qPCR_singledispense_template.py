@@ -634,11 +634,11 @@ def run(ctx: protocol_api.ProtocolContext):
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
         clean_up_wells=[pc_well,nc_well]
+        p20.pick_up_tip()
         for src in clean_up_wells:
-            p20.pick_up_tip()
-
-            p20.aspirate(20,src)
-            p20.dispense(ctx.waster)
+            for i in range(3):
+                p20.aspirate(20,src)
+                p20.dispense(ctx.waste)
         p20.drop_tip()
         tip_track['counts'][p20]+=1
         #MMIX.unused_two = MMIX.vol_well
