@@ -45,7 +45,8 @@ num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: ' + str(num_cols))
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,0,0)
+    from opentrons.drivers.rpi_drivers import gpio
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
@@ -100,7 +101,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_aspirate=0.75,
                           flow_rate_dispense=1,
                           rinse=True,
-                          rinse_loops=5,
+                          rinse_loops=6,
                           delay=3,
                           reagent_reservoir_volume=$Wone_total_volume, #100*NUM_SAMPLES,
                           num_wells=$Wone_wells,
@@ -121,7 +122,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_aspirate=0.75,
                           flow_rate_dispense=0.5,
                           rinse=False,
-                          rinse_loops=3,
+                          rinse_loops=6,
                           delay=2,
                           reagent_reservoir_volume=$Lysis_total_volume, #100*NUM_SAMPLES,
                           num_wells=1,
@@ -162,7 +163,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     flow_rate_aspirate=0.5,
                     flow_rate_dispense=0.5,
                     rinse=True,
-                    rinse_loops=4,
+                    rinse_loops=6,
                     num_wells=$Beads_wells,
                     delay=3,
                     reagent_reservoir_volume=$Beads_total_volume,#20 * NUM_SAMPLES * 1.1,
@@ -432,7 +433,7 @@ def run(ctx: protocol_api.ProtocolContext):
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
         ctx.comment('Remove Lysis buffer from plate 2')
-        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,1,0)
+        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
         ctx.pause('Take plate in 2 to station A and click continue')
         end = datetime.now()
         time_taken = (end - start)
@@ -540,7 +541,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                blow_out = True, touch_tip = False, post_airgap=True)
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
-        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,1,0)
+        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
         ctx.pause('Bring plate from A in position 2 and click continue')
         end = datetime.now()
         time_taken = (end - start)
@@ -711,7 +712,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         # Mixing
         custom_mix(m300, Beadstwo, Beadstwo.reagent_reservoir[Beadstwo.col], vol=100,
-                   rounds=10, blow_out=True, mix_height=5, post_dispense=True, source_height=0.3)
+                   rounds=10, blow_out=True, mix_height=5, post_dispense=True, source_height=0.7)
         ctx.comment('Finished premixing!')
         ctx.comment('Now, reagents will be transferred to deepwell plate.')
 
@@ -744,12 +745,12 @@ def run(ctx: protocol_api.ProtocolContext):
                 # Calculate pickup_height based on remaining volume and shape of container
                 [pickup_height, change_col] = calc_height(
                     reagent = Beadstwo, cross_section_area = 15,
-                    aspirate_volume = transfer_vol , min_height=0.3, extra_volume=0) # I will consider only aspiration from one well
+                    aspirate_volume = transfer_vol , min_height=0.7, extra_volume=0) # I will consider only aspiration from one well
                 if change_col == True:  # If we switch column because there is not enough volume left in current reservoir column we mix new column
                     ctx.comment(
                         'Mixing new reservoir column: ' + str(Beadstwo.col))
                     custom_mix(m300, Beadstwo, Beadstwo.reagent_reservoir[Beadstwo.col],
-                               vol=100, rounds=10, blow_out=True, mix_height=1,
+                               vol=100, rounds=10, blow_out=True, mix_height=7,
                                post_dispense=True)
                 pickup_height=0.5
                 ctx.comment(
@@ -758,7 +759,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent=Beadstwo, source=Beadstwo.reagent_reservoir[Beadstwo.col],
                                       dest=kf_destination[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=0.5, disp_height = -8,
+                                      pickup_height=0.7, disp_height = -8,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 '''custom_mix(m300, Beads, work_destinations_cols[i] ,
@@ -793,11 +794,10 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # Light flash end of program
     if not ctx.is_simulating():
-        from opentrons.drivers.rpi_drivers import gpio
 
+        ctx._hw_manager.hardware.set_button_light(green=True)
         for i in range(3):
             ctx._hw_manager.hardware.set_lights(rails=False)
-            #ctx._hw_manager.hardware.set_button_light(1,0,0)
             time.sleep(0.3)
             ctx._hw_manager.hardware.set_lights(rails=True)
             #ctx._hw_manager.hardware.set_button_light(0,0,1)
