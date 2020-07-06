@@ -696,7 +696,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
         move_vol_multichannel(p20, reagent = PC, source = PC.reagent_reservoir[PC.col],
         dest = pc_well, vol = volume_pc, air_gap_vol = 0, x_offset = x_offset,
-               pickup_height = pickup_height, disp_height = -10, rinse = False,
+               pickup_height = 0.2, disp_height = -10, rinse = False,
                blow_out=True, touch_tip=True)
 
         p20.drop_tip()
@@ -720,11 +720,10 @@ def run(ctx: protocol_api.ProtocolContext):
         start = datetime.now()
         p20.pick_up_tip()
 
-        [pickup_height, col_change] = calc_height(NC, area_section_screwcap, volume_mmix)
 
         move_vol_multichannel(p20, reagent = NC, source = NC.reagent_reservoir[NC.col],
         dest = nc_well, vol = volume_nc, air_gap_vol = 0, x_offset = x_offset,
-               pickup_height = pickup_height, disp_height = -10, rinse = False,
+               pickup_height = 0.2, disp_height = -10, rinse = False,
                blow_out=True, touch_tip=True)
 
         p20.drop_tip()

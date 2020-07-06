@@ -16,6 +16,7 @@ from multi_well_viral import generate_multi_well_viral
 from multi_well_pathogen_IC import generate_multi_well_pathogen_IC
 from multi_well_pathogen_R import generate_multi_well_pathogen_R
 from multi_mini_well import generate_multi_mini_well
+import numbers
 
 demo_mode=True
 
@@ -150,6 +151,40 @@ def update_readme(final_path,filename,protocol,imagepath,operation_data):
     f.write(data)
     f.close()
 
+def thermocycler_generator(path):
+
+    xls=pd.ExcelFile(excel_path)
+    code_data=pd.read_excel(xls,xls.sheet_names[2])
+    code_data=code_data.iloc[1:]
+
+    # generate listed dictionary for sampled plates
+    f={'Well': 'CODE'}
+    for i,key_row in enumerate(code_data['Table 1'].tolist()):
+        for idx,value in enumerate(code_data.iloc[i][1:]):
+            f.update({key_row+str(idx+1): value})
+    sample_list=pd.read_excel(xls,xls.sheet_names[0])
+    sample_list=sample_list.iloc[1:,1:4].reset_index()
+
+    i=0
+    for number in range(1,13):
+        for key in code_data['Table 1'].tolist():
+            sample_list.iloc[i,3]=key+str(number)
+            i+=1
+    cp=sample_list.notna()[::-1].idxmax()[2]+1
+    cn=sample_list.notna()[::-1].idxmax()[2]+2
+    f[sample_list.iloc[cp,3]]=str('CP')
+    f[sample_list.iloc[cn,3]]=str('CN')
+
+
+    thermocycler_values=pd.DataFrame(f,index=[0]).transpose()
+
+    # count number of declared elements in Dictionary to check with user declared values
+    num_samples_control = 0
+    for elem in f.values():
+        if (elem != 0 and isinstance(elem, numbers.Number)):
+            num_samples_control += 1
+    return num_samples_control, thermocycler_values
+
 ###############################################################################
 def main():
     global recipes, user_path, main_path, desktop_path, code_path, KFV_path, KFP_path, excel_path_recover, excel_path, excel_path_test
@@ -157,40 +192,10 @@ def main():
     print('Demo mode: '+str(demo_mode))
     if demo_mode==False:
     # Read the excel file from the run and obtain the dictionary of samples
-        xls=pd.ExcelFile(excel_path)
-        code_data=pd.read_excel(xls,xls.sheet_names[2])
-        code_data=code_data.iloc[1:]
-
-        # generate listed dictionary for sampled plates
-        f=dict()
-        for i,key_row in enumerate(code_data['Table 1'].tolist()):
-            for idx,value in enumerate(code_data.iloc[i][1:]):
-                f.update({key_row+str(idx+1):value})
-        thermocycler_values=pd.DataFrame(f,index=[0]).transpose()
-
-        # count number of declared elements in Dictionary to check with user declared values
-        num_samples_control = 0
-        for elem in f.values():
-            if elem != 0:
-                num_samples_control += 1
+        [num_samples_control, thermocycler_values]=thermocycler_generator(excel_path)
     else:
         excel_path = excel_path_test
-        xls=pd.ExcelFile(excel_path)
-        code_data=pd.read_excel(xls,xls.sheet_names[2])
-        code_data=code_data.iloc[1:]
-
-        # generate listed dictionary for sampled plates
-        f=dict()
-        for i,key_row in enumerate(code_data['Table 1'].tolist()):
-            for idx,value in enumerate(code_data.iloc[i][1:]):
-                f.update({key_row+str(idx+1):value})
-        thermocycler_values=pd.DataFrame(f,index=[0]).transpose()
-
-        # count number of declared elements in Dictionary to check with user declared values
-        num_samples_control = 0
-        for elem in f.values():
-            if elem != 0:
-                num_samples_control += 1
+        [num_samples_control, thermocycler_values]=thermocycler_generator(excel_path)
         print('Num muestras test: '+str(num_samples_control))
 
 
