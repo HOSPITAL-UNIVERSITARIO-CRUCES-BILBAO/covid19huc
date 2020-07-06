@@ -79,18 +79,19 @@ def generate_recipe(mode,cn_samp,recipes,num_samples):
     vol_max_pocillo=12400
     final_recipe={}
     for key in recipes[mode].keys():
-        if key not in ['MMIX','Beads','IC']:
+        if key not in ['MMIX','Beads','IC','Taqpath','Assay','Water']:
             vol_total=math.ceil((recipes[mode][key][0]*cn_samp)/100)*100
             num_cells=math.ceil(recipes[mode][key][0]*cn_samp/vol_max_pocillo)
             vol_pocillo=math.ceil((vol_total/num_cells+recipes[mode][key][1])/100)*100
             final_recipe.update({key: [vol_pocillo,num_cells]})
         elif key == 'MMIX':
-            vol_pocillo=recipes[mode][key][0]*(num_samples+2+3)+recipes[mode][key][1]
+            vol_pocillo=recipes[mode][key][0]*(num_samples+2+2)+recipes[mode][key][1]
+            num_samples_equivalent=vol_pocillo/recipes[mode][key][0]
             num_cells=1
             final_recipe.update({key: [vol_pocillo,num_cells]})
-            final_recipe.update({'Taqpath': [vol_pocillo/recipes[mode]['Taqpath'][0],num_cells]})
-            final_recipe.update({'Assay': [vol_pocillo/recipes[mode]['Assay'][0],num_cells]})
-            final_recipe.update({'Water': [vol_pocillo/recipes[mode]['Water'][0],num_cells]})
+            final_recipe.update({'Taqpath': [num_samples_equivalent*recipes[mode]['Taqpath'][0],num_cells]})
+            final_recipe.update({'Assay': [num_samples_equivalent*recipes[mode]['Assay'][0],num_cells]})
+            final_recipe.update({'Water': [num_samples_equivalent*recipes[mode]['Water'][0],num_cells]})
         elif key in ['IC']:
             vol_total=math.ceil((recipes[mode][key][0]*cn_samp)/5)*5
             num_cells=1
@@ -274,18 +275,18 @@ def main():
         os.makedirs(final_path+'\\logs')
         os.system('copy ' + excel_path +' '+ final_path+'\\OT'+str(id)+'_samples.xlsx') # copy excel input file to destination
         #reset desktop excel file
-        os.system('copy /y ' + excel_path_recover +' '+desktop_path+'fill.xlsx')
+        os.system('copy /y ' + excel_path_recover +' '+excel_path)
         if protocol == 'V':
             os.system('copy ' +main_path +'\\Github\\covid19huc\\Automation\\volumes_viral_readme_windows.html' + ' ' + final_path + '\\readme.html')
             pV=generate_multi_well_viral(final_path+'\\results',final_data)
             mini_well=generate_multi_mini_well(final_path+'\\results',final_data,protocol)
-            update_readme(final_path,'readme.html',protocol,[pV,mini_well],operation_data)
+            update_readme(final_path,'readme.html',protocol,[final_path+'\\viral_multi_well_layout.png',final_path+'\\multi_mini_well_layout.png'],operation_data)
         elif protocol == 'P':
             os.system('copy ' +main_path +'\\Github\\covid19huc\\Automation\\volumes_pathogen_readme_windows.html' + ' ' + final_path + '\\readme.html')
             pB=generate_multi_well_pathogen_IC(final_path+'\\results',final_data)
             pR=generate_multi_well_pathogen_R(final_path+'\\results',final_data)
             mini_well=generate_multi_mini_well(final_path+'\\results',final_data,protocol)
-            update_readme(final_path,'readme.html',protocol,[pR,pB,mini_well],operation_data)
+            update_readme(final_path,'readme.html',protocol,[final_path+'\\pathogen_R_multi_well_layout.png',final_path+'\\pathogen_IC_multi_well_layout.png',final_path+'\\multi_mini_well_layout.png'],operation_data)
 
     else:
         print('BEWARE! This protocol and ID run already exists! Exitting...')

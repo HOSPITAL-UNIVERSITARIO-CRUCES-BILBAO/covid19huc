@@ -776,7 +776,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('20 ul Used tips in total: ' + str(tip_track['counts'][m20]))
         ctx.comment('20 ul Used racks in total: ' + str((tip_track['counts'][m20] / 96)))
 
-    if (STEPS[2]['Execute'] == True & STEPS[4]['Execute'] == False):
+    if (STEPS[2]['Execute'] == True & STEPS[5]['Execute'] == False):
         ctx.comment('200 ul Used tips in total: ' + str(tip_track['counts'][p300]))
         ctx.comment('200 ul Used racks in total: ' + str(tip_track['counts'][p300] / 96))
 

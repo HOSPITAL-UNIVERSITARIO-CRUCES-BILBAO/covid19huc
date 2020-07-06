@@ -100,6 +100,7 @@ def run(ctx: protocol_api.ProtocolContext):
                           flow_rate_aspirate=0.75,
                           flow_rate_dispense=1,
                           rinse=True,
+                          rinse_loops=5,
                           delay=3,
                           reagent_reservoir_volume=$Wone_total_volume, #100*NUM_SAMPLES,
                           num_wells=$Wone_wells,
@@ -499,7 +500,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m300, reagent = WashBuffer1, source = WashBuffer1.reagent_reservoir[WashBuffer1.col],
                                dest = wb1plate1_destination[i], vol = transfer_vol,
                                air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 0.2, rinse = rinse, disp_height = -2,
+                               pickup_height = 0.3, rinse = rinse, disp_height = -2,
                                blow_out = True, touch_tip = False, post_airgap=True)
 
         m300.drop_tip(home_after=False)
@@ -597,7 +598,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m20, reagent=ICtwo, source=ICtwo.reagent_reservoir[IC.col],
                                       dest=kf_destination[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_ic, x_offset=[0,0],
-                                      pickup_height=0.2, disp_height = -40.7,
+                                      pickup_height=0.4, disp_height = -40.7,
                                       rinse=ICtwo.rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 m20.drop_tip(home_after=False)
@@ -750,14 +751,14 @@ def run(ctx: protocol_api.ProtocolContext):
                     custom_mix(m300, Beadstwo, Beadstwo.reagent_reservoir[Beadstwo.col],
                                vol=100, rounds=10, blow_out=True, mix_height=1,
                                post_dispense=True)
-                pickup_height=0.1
+                pickup_height=0.5
                 ctx.comment(
                     'Aspirate from reservoir column: ' + str(Beadstwo.col))
                 ctx.comment('Pickup height is ' + str(pickup_height))
                 move_vol_multichannel(m300, reagent=Beadstwo, source=Beadstwo.reagent_reservoir[Beadstwo.col],
                                       dest=kf_destination[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_vol, x_offset=x_offset,
-                                      pickup_height=0.3, disp_height = -8,
+                                      pickup_height=0.5, disp_height = -8,
                                       rinse=rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 '''custom_mix(m300, Beads, work_destinations_cols[i] ,
