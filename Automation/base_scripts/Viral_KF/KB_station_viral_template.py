@@ -794,9 +794,10 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
+    ctx._hw_manager.hardware.set_button_light(green=True)
     if not ctx.is_simulating():
 
-        ctx._hw_manager.hardware.set_button_light(green=True)
+
         for i in range(3):
             ctx._hw_manager.hardware.set_lights(rails=False)
             time.sleep(0.3)

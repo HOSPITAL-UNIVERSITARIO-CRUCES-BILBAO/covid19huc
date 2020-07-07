@@ -80,8 +80,7 @@ num_cols = math.ceil((NUM_SAMPLES-2) / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
     import os
-    #from opentrons.drivers.rpi_drivers import gpio
-    #gpio.set_rail_lights(False) #Turn off lights (termosensible reagents)
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     ctx.comment('Actual used columns: ' + str(num_cols))
 
     # Define the STEPS of the protocol
@@ -623,7 +622,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
-        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,1,0)
+        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(blue=True)
         ctx.pause('Put samples please')
         tempdeck.deactivate()
 
@@ -631,6 +630,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # STEP 3: Clean up PC and NC well
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
@@ -657,7 +657,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # STEP 4: TRANSFER Samples
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(1,0,0)
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
@@ -754,7 +754,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(0,1,0)
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(green=True)
     time.sleep(2)
     import os
     #os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
@@ -788,16 +788,5 @@ def run(ctx: protocol_api.ProtocolContext):
     if (STEPS[3]['Execute'] == False & STEPS[4]['Execute'] == True):
         ctx.comment('20 ul Used tips in total: ' + str(tip_track['counts'][m20]))
         ctx.comment('20 ul Used racks in total: ' + str((tip_track['counts'][m20] / 96)))
-
-
-    for i in range(3):
-        ctx._hw_manager.hardware.set_lights(rails=False)
-        #ctx._hw_manager.hardware.set_lights(button=(1,0,0))
-        time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(rails=True)
-        #ctx._hw_manager.hardware.set_button_light(0,0,1)
-        time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(rails=False)
-    #ctx._hw_manager.hardware.set_button_light(0,1,0)
 
     ctx.comment('Finished! \nMove plate to PCR')

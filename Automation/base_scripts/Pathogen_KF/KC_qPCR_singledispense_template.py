@@ -82,7 +82,8 @@ num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 def run(ctx: protocol_api.ProtocolContext):
     import os
     #from opentrons.drivers.rpi_drivers import gpio
-    #gpio.set_rail_lights(False) #Turn off lights (termosensible reagents)
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
+    gpio.set_rail_lights(False) #Turn off lights (termosensible reagents)
     ctx.comment('Actual used columns: ' + str(num_cols))
 
     # Define the STEPS of the protocol
@@ -791,14 +792,5 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('20 ul Used racks in total: ' + str((tip_track['counts'][m20] / 96)))
 
 
-    for i in range(3):
-        ctx._hw_manager.hardware.set_lights(rails=False)
-        #ctx._hw_manager.hardware.set_lights(button=(1,0,0))
-        time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(rails=True)
-        #ctx._hw_manager.hardware.set_button_light(0,0,1)
-        time.sleep(0.3)
-        ctx._hw_manager.hardware.set_lights(rails=False)
-    #ctx._hw_manager.hardware.set_button_light(0,1,0)
-
+    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(green=True)
     ctx.comment('Finished! \nMove plate to PCR')
