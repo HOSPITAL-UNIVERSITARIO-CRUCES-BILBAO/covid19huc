@@ -18,7 +18,7 @@ from multi_well_pathogen_R import generate_multi_well_pathogen_R
 from multi_mini_well import generate_multi_mini_well
 import numbers
 
-demo_mode=True
+demo_mode=False
 
 # recipes for protocol types [obj. volume per well, allowable remaining nonusable volume in channel]
 viral_recipe={'Beads':[20,3],
@@ -160,15 +160,16 @@ def thermocycler_generator(path):
             f.update({key_row+str(idx+1): value})
     sample_list=pd.read_excel(xls,xls.sheet_names[0])
     sample_list=sample_list.iloc[1:,1:4].reset_index()
+    if sample_list.iloc[:,2].isnull().sum()==96:
+        print('BEWARE! Excel file is not complete! Fill sample codes and restart.')
+        exit()
 
     i=0
     for number in range(1,13):
         for key in code_data['Table 1'].tolist():
             sample_list.iloc[i,3]=key+str(number)
             i+=1
-    if len(code_data['Table 1'].tolist())==0:
-        print('Beware! Excel file is not complete! Fill sample codes and restart.')
-        exit()
+
     cp=sample_list.notna()[::-1].idxmax()[2]+1
     cn=sample_list.notna()[::-1].idxmax()[2]+2
     f[sample_list.iloc[cp,3]]=str('CP')
