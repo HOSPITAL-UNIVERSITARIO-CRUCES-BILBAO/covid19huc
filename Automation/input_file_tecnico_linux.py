@@ -166,7 +166,7 @@ def thermocycler_generator(path):
         for key in code_data['Table 1'].tolist():
             sample_list.iloc[i,3]=key+str(number)
             i+=1
-    if len(sample_list)==0:
+    if len(code_data['Table 1'].tolist())==0:
         print('Beware! Excel file is not complete! Fill sample codes and restart.')
         exit()
     cp=sample_list.notna()[::-1].idxmax()[2]+1
