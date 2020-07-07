@@ -80,7 +80,7 @@ num_cols = math.ceil((NUM_SAMPLES-2) / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
     import os
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
+    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     ctx.comment('Actual used columns: ' + str(num_cols))
 
     # Define the STEPS of the protocol
@@ -89,7 +89,7 @@ def run(ctx: protocol_api.ProtocolContext):
         1: {'Execute': False, 'description': 'Make MMIX'},
         2: {'Execute': False, 'description': 'Transfer MMIX with P300'},
         3: {'Execute': True, 'description': 'Transfer MMIX with P20'},
-        4: {'Execute': False, 'description': 'Clean up NC and PC wells'},
+        4: {'Execute': True, 'description': 'Clean up NC and PC wells'},
         5: {'Execute': True, 'description': 'Transfer elution'},
         6: {'Execute': False, 'description': 'Transfer PC'},
         7: {'Execute': False, 'description': 'Transfer NC'}
@@ -491,8 +491,8 @@ def run(ctx: protocol_api.ProtocolContext):
     samples_multi = source_plate.rows()[0][:num_cols]
     pcr_wells = qpcr_plate.wells()[:(NUM_SAMPLES)]
     pcr_wells_multi = qpcr_plate.rows()[0][:num_cols]
-    pc_well = qpcr_plate.wells()[(NUM_SAMPLES-2):(NUM_SAMPLES-1)][0]
-    nc_well = qpcr_plate.wells()[(NUM_SAMPLES-1):(NUM_SAMPLES)][0]
+    pc_well = source_plate.wells()[(NUM_SAMPLES-2):(NUM_SAMPLES-1)][0]
+    nc_well = source_plate.wells()[(NUM_SAMPLES-1):(NUM_SAMPLES)][0]
     # Divide destination wells in small groups for P300 pipette
     dests = list(divide_destinations(pcr_wells, size_transfer))
 
@@ -622,7 +622,7 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
-        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(blue=True)
+        #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(blue=True)
         ctx.pause('Put samples please')
         tempdeck.deactivate()
 
@@ -630,17 +630,16 @@ def run(ctx: protocol_api.ProtocolContext):
     # STEP 3: Clean up PC and NC well
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
+    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
         clean_up_wells=[pc_well,nc_well]
-        p20.pick_up_tip()
         for src in clean_up_wells:
             for i in range(3):
+                p20.pick_up_tip()
                 p20.aspirate(20,src)
-                p20.dispense(20,trash)
-        p20.drop_tip()
+                p20.drop_tip()
         tip_track['counts'][p20]+=1
         #MMIX.unused_two = MMIX.vol_well
 
@@ -657,7 +656,7 @@ def run(ctx: protocol_api.ProtocolContext):
     # STEP 4: TRANSFER Samples
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
+    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
         start = datetime.now()
@@ -670,7 +669,10 @@ def run(ctx: protocol_api.ProtocolContext):
             vol = volume_sample, air_gap_vol = air_gap_sample, x_offset = x_offset,
                    pickup_height = 0.3, disp_height = -10, rinse = False,
                    blow_out=True, touch_tip=True, post_airgap=False)
-            ## ADD Custom mix
+            # Mixing
+            custom_mix(m20, Elution, d, vol=5, rounds=2, blow_out=True,
+                        mix_height=2, post_dispense=True, source_height=0.5)
+
             m20.drop_tip()
             tip_track['counts'][m20]+=8
 
@@ -754,7 +756,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(green=True)
+    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(green=True)
     time.sleep(2)
     import os
     #os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')

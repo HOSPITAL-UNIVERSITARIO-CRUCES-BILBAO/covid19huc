@@ -51,7 +51,7 @@ num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: ' + str(num_cols))
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
+    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
@@ -512,16 +512,15 @@ def run(ctx: protocol_api.ProtocolContext):
         tip_track['counts'][m300] += 8
 
         if not ctx.is_simulating():
-            from opentrons.drivers.rpi_drivers import gpio
             for i in range(3):
                 ctx._hw_manager.hardware.set_lights(rails=False)
-                ctx._hw_manager.hardware.set_lights(button=(1,0,0))
+                #ctx._hw_manager.hardware.set_lights(button=(1,0,0))
                 time.sleep(0.3)
                 ctx._hw_manager.hardware.set_lights(rails=True)
-                ctx._hw_manager.hardware.set_lights(button=(0,0,1))
+                #ctx._hw_manager.hardware.set_lights(button=(0,0,1))
                 time.sleep(0.3)
                 ctx._hw_manager.hardware.set_lights(rails=False)
-            ctx._hw_manager.hardware.set_lights(button=(0,1,0))
+            #ctx._hw_manager.hardware.set_lights(button=(0,1,0))
 
         ctx.pause('Introduce the samples plate coming from A')
         end = datetime.now()
@@ -749,18 +748,18 @@ def run(ctx: protocol_api.ProtocolContext):
     ############################################################################
     # Light flash end of program
     if not ctx.is_simulating():
-        from opentrons.drivers.rpi_drivers import gpio
-        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(green=True)
+        #from opentrons.drivers.rpi_drivers import gpio
+        #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(green=True)
 
         for i in range(3):
             ctx._hw_manager.hardware.set_lights(rails=False)
-            ctx._hw_manager.hardware.set_lights(button=(1,0,0))
+            #ctx._hw_manager.hardware.set_lights(button=(1,0,0))
             time.sleep(0.3)
             ctx._hw_manager.hardware.set_lights(rails=True)
-            ctx._hw_manager.hardware.set_lights(button=(0,0,1))
+            #ctx._hw_manager.hardware.set_lights(button=(0,0,1))
             time.sleep(0.3)
             ctx._hw_manager.hardware.set_lights(rails=False)
-        ctx._hw_manager.hardware.set_lights(button=(0,1,0))
+        #ctx._hw_manager.hardware.set_lights(button=(0,1,0))
 
         ctx.comment(
             'Finished! \nMove deepwell plates to KingFisher extractor.')

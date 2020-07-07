@@ -45,8 +45,8 @@ num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: ' + str(num_cols))
-    from opentrons.drivers.rpi_drivers import gpio
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
+    #from opentrons.drivers.rpi_drivers import gpio
+    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
@@ -433,7 +433,7 @@ def run(ctx: protocol_api.ProtocolContext):
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
         ctx.comment('Remove Lysis buffer from plate 2')
-        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
+        #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
         ctx.pause('Take plate in 2 to station A and click continue')
         end = datetime.now()
         time_taken = (end - start)
@@ -541,7 +541,7 @@ def run(ctx: protocol_api.ProtocolContext):
                                blow_out = True, touch_tip = False, post_airgap=True)
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
-        ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
+        #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
         ctx.pause('Bring plate from A in position 2 and click continue')
         end = datetime.now()
         time_taken = (end - start)
@@ -794,7 +794,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
-    ctx._hw_manager.hardware.set_button_light(green=True)
+    #ctx._hw_manager.hardware.set_button_light(green=True)
     if not ctx.is_simulating():
 
 

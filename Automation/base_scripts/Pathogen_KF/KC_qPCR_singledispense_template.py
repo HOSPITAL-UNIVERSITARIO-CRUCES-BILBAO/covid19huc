@@ -82,8 +82,8 @@ num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 def run(ctx: protocol_api.ProtocolContext):
     import os
     #from opentrons.drivers.rpi_drivers import gpio
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
-    gpio.set_rail_lights(False) #Turn off lights (termosensible reagents)
+    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     ctx.comment('Actual used columns: ' + str(num_cols))
 
     # Define the STEPS of the protocol
@@ -364,7 +364,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     def custom_mix(pipet, reagent, location, vol, rounds, blow_out, mix_height,
     x_offset, source_height = 3, post_airgap=False, post_airgap_vol=10,
-    post_dispense=False, post_dispense_vol=20,):
+    post_dispense=False, post_dispense_vol=20,touch_tip=False):
         '''
         Function for mixing a given [vol] in the same [location] a x number of [rounds].
         blow_out: Blow out optional [True,False]
@@ -389,6 +389,8 @@ def run(ctx: protocol_api.ProtocolContext):
             pipet.dispense(post_dispense_vol, location.top(z = -2))
         if post_airgap == True:
             pipet.dispense(post_airgap_vol, location.top(z = 5))
+        if touch_tip == True:
+            pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
 
     def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 30):
         nonlocal ctx
@@ -650,6 +652,8 @@ def run(ctx: protocol_api.ProtocolContext):
                    pickup_height = 0.3, disp_height = -10, rinse = False,
                    blow_out=True, touch_tip=True, post_airgap=False)
             ## ADD Custom mix
+            custom_mix(m20, Elution, d, vol=5, rounds=2, blow_out=True,
+                        mix_height=2, post_dispense=True, source_height=0.5)
             m20.drop_tip()
             tip_track['counts'][m20]+=8
 
@@ -792,5 +796,5 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('20 ul Used racks in total: ' + str((tip_track['counts'][m20] / 96)))
 
 
-    ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(green=True)
+    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(green=True)
     ctx.comment('Finished! \nMove plate to PCR')
