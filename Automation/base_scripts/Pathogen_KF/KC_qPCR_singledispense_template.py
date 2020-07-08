@@ -82,7 +82,6 @@ num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 def run(ctx: protocol_api.ProtocolContext):
     import os
     #from opentrons.drivers.rpi_drivers import gpio
-    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     ctx.comment('Actual used columns: ' + str(num_cols))
 
@@ -796,5 +795,4 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('20 ul Used racks in total: ' + str((tip_track['counts'][m20] / 96)))
 
 
-    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(green=True)
     ctx.comment('Finished! \nMove plate to PCR')

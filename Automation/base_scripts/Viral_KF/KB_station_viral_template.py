@@ -46,14 +46,13 @@ num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
 def run(ctx: protocol_api.ProtocolContext):
     ctx.comment('Actual used columns: ' + str(num_cols))
     #from opentrons.drivers.rpi_drivers import gpio
-    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
-        1: {'Execute': True, 'description': 'Add 100 ul Lysis Buffer and then move to station A'},
-        2: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'},
-        3: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
-        4: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1 and stop until plate comes from A'},
+        1: {'Execute': True, 'description': 'Add 50 ul Elution Buffer'},
+        2: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 1 - Round 1'},
+        3: {'Execute': True, 'description': 'Add 100 ul Wash Buffer 2 - Round 1 and stop until plate comes from A'},
+        4: {'Execute': True, 'description': 'Add 100 ul Lysis Buffer and then move to station A'},
         5: {'Execute': False, 'description': 'Transfer IC'},
         6: {'Execute': True, 'description': 'Transfer ICtwo'},
         7: {'Execute': False, 'description': 'Mix beads'},
@@ -402,47 +401,7 @@ def run(ctx: protocol_api.ProtocolContext):
     }
 
     ############################################################################
-    # STEP 1 Filling with Lysis
-    ############################################################################
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        start = datetime.now()
-        ctx.comment('###############################################')
-        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
-        ctx.comment('###############################################')
-
-        lysis_vol = [100]
-        rinse = False  # Only first time
-
-        ########
-        # Wash buffer dispense
-        for i in range(num_cols):
-            if not m300.hw_pipette['has_tip']:
-                pick_up(m300)
-            for j, transfer_vol in enumerate(lysis_vol):
-                if (i == 0 and j == 0):
-                    rinse = True #Rinse only first transfer
-                else:
-                    rinse = False
-                move_vol_multichannel(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
-                               dest = kf_destination[i], vol = transfer_vol,
-                               air_gap_vol = air_gap_vol, x_offset = x_offset,
-                               pickup_height = 0.2, rinse = rinse, disp_height = -2,
-                               blow_out = True, touch_tip = False, post_airgap=True,post_dispense=True)
-
-        m300.drop_tip(home_after=False)
-        tip_track['counts'][m300] += 8
-        ctx.comment('Remove Lysis buffer from plate 2')
-        #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
-        ctx.pause('Take plate in 2 to station A and click continue')
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('Step ' + str(STEP) + ': ' +
-                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
-        STEPS[STEP]['Time:'] = str(time_taken)
-
-    ############################################################################
-    # STEP 2: Transfer Elution buffer
+    # STEP 1: Transfer Elution buffer
     ############################################################################
 
     STEP += 1
@@ -476,7 +435,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
 
     ############################################################################
-    # STEP 3 Filling with WashBuffer1
+    # STEP 2: Filling with WashBuffer1
     ############################################################################
 
     STEP += 1
@@ -513,7 +472,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 4 Filling with WashBuffer2
+    # STEP 3: Filling with WashBuffer2
     ############################################################################
     STEP += 1
     if STEPS[STEP]['Execute'] == True:
@@ -541,8 +500,44 @@ def run(ctx: protocol_api.ProtocolContext):
                                blow_out = True, touch_tip = False, post_airgap=True)
         m300.drop_tip(home_after=False)
         tip_track['counts'][m300] += 8
-        #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
-        ctx.pause('Bring plate from A in position 2 and click continue')
+        ctx.pause('Bring plate from A in position 2 and click continue. Put IC and Beads in position 3')
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        STEPS[STEP]['Time:'] = str(time_taken)
+
+    ############################################################################
+    # STEP 4: Filling with Lysis
+    ############################################################################
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
+        ctx.comment('###############################################')
+        ctx.comment('Step ' + str(STEP) + ': ' + STEPS[STEP]['description'])
+        ctx.comment('###############################################')
+
+        lysis_vol = [100]
+        rinse = False  # Only first time
+
+        ########
+        # Wash buffer dispense
+        for i in range(num_cols):
+            if not m300.hw_pipette['has_tip']:
+                pick_up(m300)
+            for j, transfer_vol in enumerate(lysis_vol):
+                if (i == 0 and j == 0):
+                    rinse = True #Rinse only first transfer
+                else:
+                    rinse = False
+                move_vol_multichannel(m300, reagent = Lysis, source = Lysis.reagent_reservoir[Lysis.col],
+                               dest = kf_destination[i], vol = transfer_vol,
+                               air_gap_vol = air_gap_vol, x_offset = x_offset,
+                               pickup_height = 0.2, rinse = rinse, disp_height = -2,
+                               blow_out = True, touch_tip = False, post_airgap=True,post_dispense=True)
+
+        m300.drop_tip(home_after=False)
+        tip_track['counts'][m300] += 8
         end = datetime.now()
         time_taken = (end - start)
         ctx.comment('Step ' + str(STEP) + ': ' +
@@ -711,7 +706,7 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('Mixing ' + Beadstwo.name)
 
         # Mixing
-        custom_mix(m300, Beadstwo, Beadstwo.reagent_reservoir[Beadstwo.col], vol=100,
+        custom_mix(m300, Beadstwo, Beadstwo.reagent_reservoir[Beadstwo.col], vol=80,
                    rounds=10, blow_out=True, mix_height=5, post_dispense=True, source_height=0.7)
         ctx.comment('Finished premixing!')
         ctx.comment('Now, reagents will be transferred to deepwell plate.')
@@ -794,7 +789,6 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
-    #ctx._hw_manager.hardware.set_button_light(green=True)
     if not ctx.is_simulating():
 
 
@@ -802,12 +796,11 @@ def run(ctx: protocol_api.ProtocolContext):
             ctx._hw_manager.hardware.set_lights(rails=False)
             time.sleep(0.3)
             ctx._hw_manager.hardware.set_lights(rails=True)
-            #ctx._hw_manager.hardware.set_button_light(0,0,1)
             time.sleep(0.3)
             ctx._hw_manager.hardware.set_lights(rails=False)
-        #ctx._hw_manager.hardware.set_button_light(0,1,0)
+    ctx.home()
 
-        ctx.comment(
-            'Finished! \nMove deepwell plates to KingFisher extractor.')
-        ctx.comment('Used tips in total: ' + str(tip_track['counts'][m300]))
-        ctx.comment('Used racks in total: ' + str(tip_track['counts'][m300] / 96))
+    ctx.comment(
+        'Finished! \nMove deepwell plates to KingFisher extractor.')
+    ctx.comment('Used tips in total: ' + str(tip_track['counts'][m300]))
+    ctx.comment('Used racks in total: ' + str(tip_track['counts'][m300] / 96))

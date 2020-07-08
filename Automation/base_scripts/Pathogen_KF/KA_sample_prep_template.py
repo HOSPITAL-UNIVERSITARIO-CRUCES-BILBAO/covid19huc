@@ -50,7 +50,6 @@ screwcap_cross_section_area = math.pi * \
 
 def run(ctx: protocol_api.ProtocolContext):
     import os
-    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(red=True)
     # Define the STEPS of the protocol
     STEP = 0
     STEPS = {  # Dictionary with STEP activation, description, and times
@@ -382,19 +381,19 @@ def run(ctx: protocol_api.ProtocolContext):
 
     '''if not ctx.is_simulating():
         os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')'''
-    #ctx._hw_manager.hardware._backend.gpio_chardev.set_button_light(green=True)
+
     for i in range(3):
         ctx._hw_manager.hardware.set_lights(rails=False)
-        #ctx._hw_manager.hardware.set_button_light(1,0,0)
+
         time.sleep(0.3)
         ctx._hw_manager.hardware.set_lights(rails=True)
-        #ctx._hw_manager.hardware.set_button_light(0,0,1)
+
         time.sleep(0.3)
         ctx._hw_manager.hardware.set_lights(rails=False)
-    #ctx._hw_manager.hardware.set_button_light(0,1,0)
+    ctx.home()
 
     ctx.comment(
-        'Finished! \nMove deepwell plate (slot 5) to Station C for MMIX addition and qPCR preparation.')
+        'Finished! \nMove deepwell plate to Station B.')
 
     ctx.comment('Used 200µl tips in total: ' + str(tip_track['counts'][p300]))
     ctx.comment('Used 200ul racks in total: '+str(tip_track['counts'][p300] / 96))

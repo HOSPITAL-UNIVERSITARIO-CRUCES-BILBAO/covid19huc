@@ -221,7 +221,8 @@ def main():
         tec_name = '\''+(input('Nombre del técnico (usuario): '))+'\''
         print('------------------------------------------------------------------------')
         if isinstance(tec_name, str):
-            tec_name=tec_name.upper()
+            tec_name=tec_name.lower()
+            tec_name=tec_name[0].upper()+tec_name[1:]
             control=True
         else:
             print('Introduce tu usuario HUC, por favor')
