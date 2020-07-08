@@ -59,6 +59,7 @@ KFP_path = code_path + '\\Pathogen_KF'
 excel_path_recover = main_path + '\\Github\\covid19huc\\Automation\\base_scripts\\Reference_template.xlsx'
 excel_path = desktop_path + '\\fill.xlsx'
 excel_path_test = main_path+'\\prueba.xlsx'
+id_path = main_path + '\\ID_run'
 
 # Function to distinguish between OT and KF protocols
 def select_protocol_type(p1, p2):
@@ -241,7 +242,7 @@ def main():
         dia_registro=fecha.strftime("%Y_%m_%d")
     else:
         if not os.path.isdir(id_path):
-            os.mkdir(id_path)
+            os.makedirs(id_path)
             id_runs = id_path + '\\id_runs.txt'
             with open(id_runs, 'w') as f:
                 f.write('ID\tdate\thora\tsample_num\n')
