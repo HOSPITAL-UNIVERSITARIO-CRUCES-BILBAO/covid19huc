@@ -233,30 +233,37 @@ def main():
             print('Introduce tu usuario HUC, por favor')
 
     # Get run session ID
-    if not os.path.isdir(id_path):
-        os.mkdir(id_path)
-        id_runs = id_path + '\\id_runs.txt'
-        with open(id_runs, 'w') as f:
-            f.write('ID\tdate\thora\tsample_num\n')
-        f.close()
-    if os.path.isdir(id_path):
-        # Get date
+    if demo_mode==True:
+        id=1000001
         fecha=datetime.now()
         t_registro='\''+fecha.strftime("%m/%d/%Y, %H:%M:%S")+'\''
         h_registro=fecha.strftime("%H:%M")
         dia_registro=fecha.strftime("%Y_%m_%d")
-        with open(id_runs, 'r+') as f:
-            lines = f.read().splitlines()
-            last_line = lines[-1]
-            if last_line.split('\t')[0]=='ID':
-                id=1
-                print('The ID for the run will be: '+'%d' % id +', on '+dia_registro+' '+h_registro+'\n' )
-                f.write('%d' % 1 +'\t'+dia_registro+'\t'+h_registro+'\t'+'%d' % num_samples + '\n' )
-            else:
-                id=int(last_line.split('\t')[0])+1
-                print('The ID for the run will be: '+'%d' % id +', on '+dia_registro+' '+h_registro+'\n' )
-                f.write('%d' % id +'\t'+dia_registro+'\t'+h_registro+'\t'+'%d' % num_samples + '\n' )
-        f.close()
+    else:
+        if not os.path.isdir(id_path):
+            os.mkdir(id_path)
+            id_runs = id_path + '\\id_runs.txt'
+            with open(id_runs, 'w') as f:
+                f.write('ID\tdate\thora\tsample_num\n')
+            f.close()
+        if os.path.isdir(id_path):
+            # Get date
+            fecha=datetime.now()
+            t_registro='\''+fecha.strftime("%m/%d/%Y, %H:%M:%S")+'\''
+            h_registro=fecha.strftime("%H:%M")
+            dia_registro=fecha.strftime("%Y_%m_%d")
+            with open(id_runs, 'r+') as f:
+                lines = f.read().splitlines()
+                last_line = lines[-1]
+                if last_line.split('\t')[0]=='ID':
+                    id=1
+                    print('The ID for the run will be: '+'%d' % id +', on '+dia_registro+' '+h_registro+'\n' )
+                    f.write('%d' % 1 +'\t'+dia_registro+'\t'+h_registro+'\t'+'%d' % num_samples + '\n' )
+                else:
+                    id=int(last_line.split('\t')[0])+1
+                    print('The ID for the run will be: '+'%d' % id +', on '+dia_registro+' '+h_registro+'\n' )
+                    f.write('%d' % id +'\t'+dia_registro+'\t'+h_registro+'\t'+'%d' % num_samples + '\n' )
+            f.close()
 
     # select the type of protocol to be run
     [protocol,protocol_path]=select_protocol_type(KFV_path, KFP_path)
@@ -279,6 +286,8 @@ def main():
 
     #determine output path
     run_name = str(dia_registro)+'_OT'+str(id)+'_'+protocol
+    if demo_mode==True:
+        run_name=run_name+'_prueba'
     final_path=os.path.join(main_path,run_name)
 
     # create folder directory in case it doesn't already exist and copy excel registry file there
