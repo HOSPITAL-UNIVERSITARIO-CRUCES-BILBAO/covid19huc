@@ -243,6 +243,7 @@ def main():
             f.close()
         if os.path.isdir(id_path):
             # Get date
+            id_runs = id_path + '/id_runs.txt'
             fecha=datetime.now()
             t_registro='\''+fecha.strftime("%m/%d/%Y, %H:%M:%S")+'\''
             h_registro=fecha.strftime("%H:%M")
