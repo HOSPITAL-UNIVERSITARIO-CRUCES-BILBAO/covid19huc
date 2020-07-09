@@ -594,7 +594,7 @@ def run(ctx: protocol_api.ProtocolContext):
                 move_vol_multichannel(m20, reagent=ICtwo, source=ICtwo.reagent_reservoir[IC.col],
                                       dest=kf_destination[i], vol=transfer_vol,
                                       air_gap_vol=air_gap_ic, x_offset=[0,0],
-                                      pickup_height=0.4, disp_height = -40.7,
+                                      pickup_height=0.5, disp_height = -40.7,
                                       rinse=ICtwo.rinse, blow_out = True, touch_tip=False, post_airgap=True)
 
                 m20.drop_tip(home_after=False)

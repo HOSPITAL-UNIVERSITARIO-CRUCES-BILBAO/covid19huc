@@ -12,7 +12,7 @@ import csv
 # metadata
 metadata = {
     'protocolName': 'Station C Kingfisher Pathogen qPCR setup Version 2',
-    'author': 'Hiart Maortua, Malen Aguirregabiria, Aitor Gastaminza & José Luis Villanueva (jlvillanueva@clinic.cat)',
+    'author': 'Hiart Maortua, Aitor Gastaminza & José Luis Villanueva (jlvillanueva@clinic.cat)',
     'source': 'Hospital Clínic Barcelona, Hospital Universitario Cruces Bilbao',
     'apiLevel': '2.2',
     'description': 'Protocol for Kingfisher sample setup (C) - Pathogen Kit (ref 4462359) using CORE script'
@@ -24,21 +24,20 @@ metadata = {
 '''
 #Defined variables
 ##################
-NUM_SAMPLES = 96
-#NUM_SAMPLES = NUM_SAMPLES -1 #Remove last sample (PC), done manually
-
+NUM_SAMPLES = $num_samples
+NUM_SAMPLES = NUM_SAMPLES + 2 # MMIX to be dispensed for PC and NC
 
 air_gap_vol = 20
 air_gap_mmix = 5
 air_gap_sample = 2
-run_id = '$run_id'
+run_id = $run_id
 
 # Tune variables
-size_transfer = 4  # Number of wells the distribute function will fill
+size_transfer = 4  # Number of wells the distribute function will fill. Deprecated by calculation function
 volume_sample = 5  # Volume of the sample
-volume_mmix_available = 50*20 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
-volume_pc = 20
-volume_nc = 20
+volume_pc = 5
+volume_nc = 5
+#volume_mmix_available = 50*20 #(NUM_SAMPLES * 1.5 * volume_mmix)  # Total volume of first screwcap
 extra_dispensal = 10  # Extra volume for master mix in each distribute transfer
 diameter_screwcap = 8.5  # Diameter of the screwcap
 temperature = 8  # Temperature of temp module
@@ -77,12 +76,10 @@ volume_mmix_available = (NUM_SAMPLES * 1.1 * MMIX_vol[mmix_selection][0])  # Tot
 # Calculated variables
 area_section_screwcap = (np.pi * diameter_screwcap**2) / 4
 h_cone = (volume_cone * 3 / area_section_screwcap)
-num_cols = math.ceil(NUM_SAMPLES / 8)  # Columns we are working on
+num_cols = math.ceil((NUM_SAMPLES-2) / 8)  # Columns we are working on
 
 def run(ctx: protocol_api.ProtocolContext):
     import os
-    #from opentrons.drivers.rpi_drivers import gpio
-    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     ctx.comment('Actual used columns: ' + str(num_cols))
 
     # Define the STEPS of the protocol
@@ -91,21 +88,21 @@ def run(ctx: protocol_api.ProtocolContext):
         1: {'Execute': False, 'description': 'Make MMIX'},
         2: {'Execute': False, 'description': 'Transfer MMIX with P300'},
         3: {'Execute': True, 'description': 'Transfer MMIX with P20'},
-        4: {'Execute': True, 'description': 'Transfer elution'},
-        5: {'Execute': False, 'description': 'Clean up NC and PC wells'},
-        6: {'Execute': False, 'description': 'Transfer PC'},
-        7: {'Execute': False, 'description': 'Transfer NC'}
+        4: {'Execute': True, 'description': 'Clean up NC and PC wells'},
+        5: {'Execute': True, 'description': 'Transfer elution'},
+        6: {'Execute': True, 'description': 'Transfer PC'},
+        7: {'Execute': True, 'description': 'Transfer NC'}
     }
 
     if STEPS[2]['Execute']==True:
-        STEPS[3]['Execute']=False # just to make sure it P300 is being used, do not load P20 single
+        STEPS[3]['Execute']=False # just to make sure if P300 is being used for the MMIX, do not load P20 single
 
     for s in STEPS:  # Create an empty wait_time
         if 'wait_time' not in STEPS[s]:
             STEPS[s]['wait_time'] = 0
 
     #Folder and file_path for log time
-    folder_path = '/var/lib/jupyter/notebooks/'+run_id
+    folder_path = '/var/lib/jupyter/notebooks/'+str(run_id)
     if not ctx.is_simulating():
         if not os.path.isdir(folder_path):
             os.mkdir(folder_path)
@@ -135,8 +132,8 @@ def run(ctx: protocol_api.ProtocolContext):
     # Reagents and their characteristics
     MMIX = Reagent(name = 'Master Mix',
                       rinse = False,
-                      flow_rate_aspirate = 1,
-                      flow_rate_dispense = 1,
+                      flow_rate_aspirate = 2,
+                      flow_rate_dispense = 4,
                       reagent_reservoir_volume = $MMIX_total_volume, # volume_mmix_available,
                       num_wells = 1, #change with num samples
                       delay = 0,
@@ -176,7 +173,6 @@ def run(ctx: protocol_api.ProtocolContext):
                       h_cono=0,
                       v_fondo=0
                       )
-
     tackpath = Reagent(name = 'MMIX_multiplex_tackpath',
                       rinse = False,
                       flow_rate_aspirate = 1,
@@ -391,7 +387,7 @@ def run(ctx: protocol_api.ProtocolContext):
         if touch_tip == True:
             pipet.touch_tip(speed = 20, v_offset = -5, radius = 0.9)
 
-    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.5, extra_volume = 30):
+    def calc_height(reagent, cross_section_area, aspirate_volume, min_height = 0.3, extra_volume = 30):
         nonlocal ctx
         ctx.comment('Remaining volume ' + str(reagent.vol_well) +
                     '< needed volume ' + str(aspirate_volume) + '?')
@@ -421,27 +417,32 @@ def run(ctx: protocol_api.ProtocolContext):
             col_change = False
         return height, col_change
 
+    ############################################
+    # tempdeck
+    tempdeck = ctx.load_module('tempdeck', '1') #temdeck for qpcr samples
+    tempdeck.set_temperature(temperature)
+
+    tempdeck_two = ctx.load_module('tempdeck', '4') #tempdeck for MMIX, PC and NC
+    tempdeck_two.set_temperature(temperature)
+
     ####################################
     # load labware and modules
     # 24 well rack
-    tuberack = ctx.load_labware(
-        'opentrons_24_aluminumblock_generic_2ml_screwcap', '1',
+    tuberack = tempdeck_two.load_labware(
+        'opentrons_24_aluminumblock_generic_2ml_screwcap',
         'Bloque Aluminio opentrons 24 screwcaps 2000 µL ')
-
-    ############################################
-
-    trash = ctx.load_labware('agilent_1_reservoir_290ml','12', 'trash').wells()[0]
-
-
-    # tempdeck
-    tempdeck = ctx.load_module('tempdeck', '4')
-    tempdeck.set_temperature(temperature)
 
     ##################################
     # qPCR plate - final plate, goes to PCR
     qpcr_plate = tempdeck.load_labware(
         'abi_fast_qpcr_96_alum_opentrons_100ul',
         'chilled qPCR final plate')
+
+    ##################################
+    # waste reservoir
+    waste_reservoir = ctx.load_labware(
+        'nest_1_reservoir_195ml', '9', 'waste reservoir')
+    waste = waste_reservoir.wells()[0]  # referenced as reservoir
 
     ##################################
     # Sample plate - comes from B
@@ -474,7 +475,6 @@ def run(ctx: protocol_api.ProtocolContext):
             'counts': {p300: 0, m20: 0},
             'maxes': {p300: len(tips200) * 96, m20: len(tips20)*96}
         }
-
     else:
         tips20mmix = [ ctx.load_labware('opentrons_96_filtertiprack_20ul', slot)
                         for slot in ['8'] ]
@@ -485,6 +485,8 @@ def run(ctx: protocol_api.ProtocolContext):
             'counts': {p20: 0, m20: 0},
             'maxes': {p20: len(tips200) * 96, m20: len(tips20)*96}
         }
+
+
 
     ################################################################################
     # Declare which reagents are in each reservoir as well as deepwell and elution plate
@@ -497,11 +499,11 @@ def run(ctx: protocol_api.ProtocolContext):
     samples = source_plate.wells()[:NUM_SAMPLES]
     samples_multi = source_plate.rows()[0][:num_cols]
     pcr_wells = qpcr_plate.wells()[:(NUM_SAMPLES)]
-
+    pcr_wells_multi = qpcr_plate.rows()[0][:num_cols]
+    pc_well_old = source_plate.wells()[(NUM_SAMPLES-2):(NUM_SAMPLES-1)][0]
+    nc_well_old = source_plate.wells()[(NUM_SAMPLES-1):(NUM_SAMPLES)][0]
     pc_well = qpcr_plate.wells()[(NUM_SAMPLES-2):(NUM_SAMPLES-1)][0]
     nc_well = qpcr_plate.wells()[(NUM_SAMPLES-1):(NUM_SAMPLES)][0]
-
-    pcr_wells_multi = qpcr_plate.rows()[0][:num_cols]
     # Divide destination wells in small groups for P300 pipette
     dests = list(divide_destinations(pcr_wells, size_transfer))
 
@@ -632,7 +634,36 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
         ctx.pause('Put samples please')
-        tempdeck.deactivate()
+
+    ############################################################################
+    # STEP 3: Clean up PC and NC well
+    ############################################################################
+    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
+    STEP += 1
+    if STEPS[STEP]['Execute'] == True:
+        start = datetime.now()
+        clean_up_wells=[pc_well_old,nc_well_old]
+        p20.pick_up_tip()
+        for src in clean_up_wells:
+            for i in range(3):
+
+                move_vol_multichannel(p20, reagent = PC, source = src,
+                dest = waste, vol = 20, air_gap_vol = 0, x_offset = [0,0],
+                       pickup_height = 0.3, disp_height = 5, rinse = False,
+                       blow_out=True, touch_tip=False,post_airgap=True, post_airgap_vol=1)
+
+        p20.drop_tip()
+        tip_track['counts'][p20]+=1
+        #MMIX.unused_two = MMIX.vol_well
+
+        end = datetime.now()
+        time_taken = (end - start)
+        ctx.comment('#######################################################')
+        ctx.comment('Step ' + str(STEP) + ': ' +
+                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
+        ctx.comment('#######################################################')
+        STEPS[STEP]['Time:'] = str(time_taken)
+
 
     ############################################################################
     # STEP 4: TRANSFER Samples
@@ -649,10 +680,11 @@ def run(ctx: protocol_api.ProtocolContext):
             move_vol_multichannel(m20, reagent = Elution, source = s, dest = d,
             vol = volume_sample, air_gap_vol = air_gap_sample, x_offset = x_offset,
                    pickup_height = 0.3, disp_height = -10, rinse = False,
-                   blow_out=True, touch_tip=True, post_airgap=False)
-            ## ADD Custom mix
+                   blow_out=True, touch_tip=False, post_airgap=False)
+            # Mixing
             custom_mix(m20, Elution, d, vol=5, rounds=2, blow_out=True,
-                        mix_height=2, post_dispense=True, source_height=0.5)
+                        mix_height=6, post_dispense=True, source_height=0.5, x_offset=[0,0],touch_tip=True)
+
             m20.drop_tip()
             tip_track['counts'][m20]+=8
 
@@ -664,33 +696,10 @@ def run(ctx: protocol_api.ProtocolContext):
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
 
-    ############################################################################
-    # STEP 5: Clean up PC and NC well
-    ############################################################################
-    ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
-    STEP += 1
-    if STEPS[STEP]['Execute'] == True:
-        start = datetime.now()
-        clean_up_wells=[pc_well,nc_well]
-        p20.pick_up_tip()
-        for src in clean_up_wells:
-            for i in range(3):
-                p20.aspirate(20,src)
-                p20.dispense(20,trash)
-        p20.drop_tip()
-        tip_track['counts'][p20]+=1
-        #MMIX.unused_two = MMIX.vol_well
 
-        end = datetime.now()
-        time_taken = (end - start)
-        ctx.comment('#######################################################')
-        ctx.comment('Step ' + str(STEP) + ': ' +
-                    STEPS[STEP]['description'] + ' took ' + str(time_taken))
-        ctx.comment('#######################################################')
-        STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 6: Transfer PC with P20
+    # STEP 5: Transfer PC with P20
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     STEP += 1
@@ -698,16 +707,15 @@ def run(ctx: protocol_api.ProtocolContext):
         start = datetime.now()
         p20.pick_up_tip()
 
-        [pickup_height, col_change] = calc_height(PC, area_section_screwcap, volume_mmix)
+        #[pickup_height, col_change] = calc_height(PC, area_section_screwcap, volume_mmix)
 
         move_vol_multichannel(p20, reagent = PC, source = PC.reagent_reservoir[PC.col],
         dest = pc_well, vol = volume_pc, air_gap_vol = 0, x_offset = x_offset,
                pickup_height = 0.2, disp_height = -10, rinse = False,
                blow_out=True, touch_tip=True)
 
-        p20.drop_tip()
+        p20.drop_tip(home_after=False)
         tip_track['counts'][p20]+=1
-        #MMIX.unused_two = MMIX.vol_well
 
         end = datetime.now()
         time_taken = (end - start)
@@ -718,7 +726,7 @@ def run(ctx: protocol_api.ProtocolContext):
         STEPS[STEP]['Time:'] = str(time_taken)
 
     ############################################################################
-    # STEP 7: Transfer NC with P20
+    # STEP 6: Transfer NC with P20
     ############################################################################
     ctx._hw_manager.hardware.set_lights(rails=False) # set lights off when using MMIX
     STEP += 1
@@ -726,14 +734,12 @@ def run(ctx: protocol_api.ProtocolContext):
         start = datetime.now()
         p20.pick_up_tip()
 
-        [pickup_height, col_change] = calc_height(NC, area_section_screwcap, volume_mmix)
-
         move_vol_multichannel(p20, reagent = NC, source = NC.reagent_reservoir[NC.col],
         dest = nc_well, vol = volume_nc, air_gap_vol = 0, x_offset = x_offset,
                pickup_height = 0.2, disp_height = -10, rinse = False,
                blow_out=True, touch_tip=True)
 
-        p20.drop_tip()
+        p20.drop_tip(home_after=False)
         tip_track['counts'][p20]+=1
         #MMIX.unused_two = MMIX.vol_well
 
@@ -744,8 +750,11 @@ def run(ctx: protocol_api.ProtocolContext):
                     STEPS[STEP]['description'] + ' took ' + str(time_taken))
         ctx.comment('#######################################################')
         STEPS[STEP]['Time:'] = str(time_taken)
+    tempdeck.deactivate()
+    tempdeck_two.deactivate()
 
-################################################################################
+
+    ############################################################################
     # Export the time log to a tsv file
     if not ctx.is_simulating():
         with open(file_path, 'w') as f:
@@ -759,7 +768,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################################################
     # Light flash end of program
-
+    ctx.home()
     time.sleep(2)
     import os
     #os.system('mpg123 -f -8000 /etc/audio/speaker-test.mp3 &')
@@ -793,6 +802,5 @@ def run(ctx: protocol_api.ProtocolContext):
     if (STEPS[3]['Execute'] == False & STEPS[4]['Execute'] == True):
         ctx.comment('20 ul Used tips in total: ' + str(tip_track['counts'][m20]))
         ctx.comment('20 ul Used racks in total: ' + str((tip_track['counts'][m20] / 96)))
-
 
     ctx.comment('Finished! \nMove plate to PCR')

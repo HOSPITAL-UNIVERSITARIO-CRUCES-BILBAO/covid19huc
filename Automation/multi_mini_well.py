@@ -36,7 +36,7 @@ def generate_multi_mini_well(path, recipe,mode,num_cols):
         # colour beads _wells
         if num_cols==1:
             barplot=ax.scatter([2 for x in range(8)],np.arange(8),s=200,c = 'r')
-            barplot=ax.scatter([3 for x in range(8)],np.arange(8),facecolors='none', edgecolors='k')
+            barplot=ax.scatter([3 for x in range(8)],np.arange(8),s=200,facecolors='none', edgecolors='k')
         else:
             barplot=ax.scatter([2 for x in range(8)],np.arange(8),s=200,c = 'r')
             barplot=ax.scatter([3 for x in range(8)],np.arange(8),s=200,c = 'r')
