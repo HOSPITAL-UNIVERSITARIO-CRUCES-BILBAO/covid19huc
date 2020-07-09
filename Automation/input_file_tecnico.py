@@ -21,7 +21,7 @@ import numbers
 import platform # use this to generate the input file forms
 platform.system()
 
-demo_mode=False
+demo_mode=True
 
 # recipes for protocol types [obj. volume per well, allowable remaining nonusable volume in channel]
 viral_recipe={'Beads':[20,3],
@@ -101,7 +101,10 @@ def generate_recipe(mode,cn_samp,recipes,num_samples):
             final_recipe.update({key: [vol_pocillo,num_cells]})
         elif (key == 'Beads' and mode == 'V'):
             vol_total=math.ceil((recipes[mode][key][0]*cn_samp)/100)*100
-            num_cells=2
+            if num_samples<=8:
+                num_cells=1
+            else:
+                num_cells=2
             vol_pocillo=math.ceil((vol_total/num_cells+recipes[mode][key][1])/8/10)*10
             final_recipe.update({key: [vol_pocillo,num_cells]})
         elif (key == 'Beads' and mode == 'P'):
@@ -305,13 +308,13 @@ def main():
         if protocol == 'V':
             os.system('cp ' +main_path +'covid19huc/Automation/volumes_viral_readme.html' + ' ' + final_path + '/readme.html')
             pV=generate_multi_well_viral(final_path+'/results',final_data)
-            mini_well=generate_multi_mini_well(final_path+'/results',final_data,protocol)
+            mini_well=generate_multi_mini_well(final_path+'/results',final_data,protocol,num_cols)
             update_readme(final_path,'readme.html',protocol,[pV,mini_well],operation_data)
         elif protocol == 'P':
             os.system('cp ' +main_path +'covid19huc/Automation/volumes_pathogen_readme.html' + ' ' + final_path + '/readme.html')
             pB=generate_multi_well_pathogen_IC(final_path+'/results',final_data)
             pR=generate_multi_well_pathogen_R(final_path+'/results',final_data)
-            mini_well=generate_multi_mini_well(final_path+'/results',final_data,protocol)
+            mini_well=generate_multi_mini_well(final_path+'/results',final_data,protocol,num_cols)
             update_readme(final_path,'readme.html',protocol,[pR,pB,mini_well],operation_data)
 
     else:

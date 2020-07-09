@@ -307,13 +307,13 @@ def main():
         if protocol == 'V':
             os.system('copy ' +main_path +'\\Github\\covid19huc\\Automation\\volumes_viral_readme_windows.html' + ' ' + final_path + '\\readme.html')
             pV=generate_multi_well_viral(final_path+'\\results',final_data)
-            mini_well=generate_multi_mini_well(final_path+'\\results',final_data,protocol)
+            mini_well=generate_multi_mini_well(final_path+'\\results',final_data,protocol,num_cols)
             update_readme(final_path,'readme.html',protocol,['file:///'+final_path+'\\results\\viral_multi_well_layout.png','file:///'+final_path+'\\results\\multi_mini_well_layout.png'],operation_data)
         elif protocol == 'P':
             os.system('copy ' +main_path +'\\Github\\covid19huc\\Automation\\volumes_pathogen_readme_windows.html' + ' ' + final_path + '\\readme.html')
             pB=generate_multi_well_pathogen_IC(final_path+'\\results',final_data)
             pR=generate_multi_well_pathogen_R(final_path+'\\results',final_data)
-            mini_well=generate_multi_mini_well(final_path+'\\results',final_data,protocol)
+            mini_well=generate_multi_mini_well(final_path+'\\results',final_data,protocol,num_cols)
             update_readme(final_path,'readme.html',protocol,['file:///'+final_path+'\\results\\pathogen_R_multi_well_layout.png','file:///'+final_path+'\\results\\pathogen_IC_multi_well_layout.png','file:///'+final_path+'\\multi_mini_well_layout.png'],operation_data)
 
     else:

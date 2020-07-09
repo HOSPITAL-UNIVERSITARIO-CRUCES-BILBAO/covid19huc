@@ -419,16 +419,16 @@ def run(ctx: protocol_api.ProtocolContext):
 
     ############################################
     # tempdeck
-    tempdeck = ctx.load_module('tempdeck', '4')
+    tempdeck = ctx.load_module('tempdeck', '1') #temdeck for qpcr samples
     tempdeck.set_temperature(temperature)
 
-    tempdeck_two = ctx.load_module('tempdeck', '1')
+    tempdeck_two = ctx.load_module('tempdeck', '4') #tempdeck for MMIX, PC and NC
     tempdeck_two.set_temperature(temperature)
 
     ####################################
     # load labware and modules
     # 24 well rack
-    tempdeck_two = ctx.load_labware(
+    tuberack = tempdeck_two.load_labware(
         'opentrons_24_aluminumblock_generic_2ml_screwcap',
         'Bloque Aluminio opentrons 24 screwcaps 2000 µL ')
 
@@ -649,7 +649,7 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multichannel(p20, reagent = PC, source = src,
                 dest = waste, vol = 20, air_gap_vol = 0, x_offset = [0,0],
-                       pickup_height = 0.2, disp_height = 5, rinse = False,
+                       pickup_height = 0.3, disp_height = 5, rinse = False,
                        blow_out=True, touch_tip=False,post_airgap=True, post_airgap_vol=1)
 
         p20.drop_tip()
@@ -683,7 +683,7 @@ def run(ctx: protocol_api.ProtocolContext):
                    blow_out=True, touch_tip=False, post_airgap=False)
             # Mixing
             custom_mix(m20, Elution, d, vol=5, rounds=2, blow_out=True,
-                        mix_height=6, post_dispense=True, source_height=0.5, x_offset=[0,0],touch_tip=False)
+                        mix_height=6, post_dispense=True, source_height=0.5, x_offset=[0,0],touch_tip=True)
 
             m20.drop_tip()
             tip_track['counts'][m20]+=8
