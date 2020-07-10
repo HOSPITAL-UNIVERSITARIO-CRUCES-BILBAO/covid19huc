@@ -649,8 +649,8 @@ def run(ctx: protocol_api.ProtocolContext):
 
                 move_vol_multichannel(p20, reagent = PC, source = src,
                 dest = waste, vol = 20, air_gap_vol = 0, x_offset = [0,0],
-                       pickup_height = 0.3, disp_height = 5, rinse = False,
-                       blow_out=True, touch_tip=False,post_airgap=True, post_airgap_vol=1)
+                       pickup_height = 0.2, disp_height = 5, rinse = False,
+                       blow_out=True, touch_tip=False,post_airgap=False, post_airgap_vol=0)
 
         p20.drop_tip()
         tip_track['counts'][p20]+=1

@@ -281,7 +281,7 @@ def main():
                 }
 
     #determine output path
-    run_name = str(dia_registro)+'_OT'+str(id)+'_'+protocol
+    run_name = str(dia_registro)+'_OT_'+str(id)+'_'+protocol
     if demo_mode==True:
         run_name=run_name+'_prueba'
     final_path=os.path.join(main_path,run_name)
